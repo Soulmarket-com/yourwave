@@ -50,6 +50,7 @@ primer despliegue.
     --color-wave-blue: var(--wave-blue);
     --color-wave-sky: var(--wave-sky);
     --color-sun: var(--sun);
+    --color-on-deep: var(--on-deep);
     --color-primary: var(--primary);
     --color-on-primary: var(--on-primary);
     --color-link: var(--link);
@@ -63,6 +64,13 @@ primer despliegue.
     --font-script: var(--font-script);
   }
   ```
+  `bundle.css` se importa con `layer(components)`. Tailwind v4 declara el
+  orden `@layer theme, base, components, utilities;`; sin indicarlo,
+  `bundle.css` queda sin capa y las reglas sin capa ganan siempre a
+  cualquier capa — ninguna utilidad de Tailwind (`text-on-deep`,
+  `border-on-deep`...) podría pisar `.yw-btn-secondary` cuando haga falta
+  (botón secundario sobre fondo `wave-indigo`). Metiéndolo en `components`,
+  la capa `utilities` (posterior) gana como es de esperar.
   No se edita `design-system/tokens.css` ni `bundle.css` (fuente de verdad,
   generados). El `@import` de Google Fonts que trae `bundle.css` se deja tal
   cual; se añaden `<link rel="preconnect">` en `Layout.astro` para mitigar
@@ -80,6 +88,12 @@ primer despliegue.
   `public/logos/` para cuando se necesite.
 - Se sirven directo desde `public/` con `<img>` (ya son SVG optimizados, no
   pasan por `astro:assets`).
+- La guía de marca es explícita: el logo "solo sobre fondos claros hasta
+  tener versiones vectoriales en negativo". El footer (fondo `wave-indigo`)
+  **no** lleva la imagen del logo — se usa el nombre "Your Wave" en texto
+  (`yw-heading-3`) en su lugar, sin ningún filtro CSS que invierta colores
+  (eso rompería el amarillo `sun` del símbolo). El logo real queda solo en
+  el header, sobre `surface`.
 
 ## Contacto y reservas (WhatsApp)
 
