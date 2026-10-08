@@ -81,6 +81,46 @@ primer despliegue.
 - Se sirven directo desde `public/` con `<img>` (ya son SVG optimizados, no
   pasan por `astro:assets`).
 
+## Contacto y reservas (WhatsApp)
+
+De momento no hay motor de reservas ni backend de contacto: todo CTA de
+**reservar o contactar** abre WhatsApp con un mensaje precargado. Los CTA de
+**explorar/ver/conocer** (navegación informativa) se quedan como anclas
+internas — no abren WhatsApp.
+
+- `src/config/contact.ts`:
+  ```ts
+  export const whatsappNumber = '34628757954';
+
+  export function whatsappLink(message: string): string {
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  }
+  ```
+  Un único punto con el número, para no repetirlo suelto en cada CTA.
+- CTA → WhatsApp (con su mensaje precargado):
+  - Header "Reserva tu sesión" — "Hola, quiero reservar una sesión en Your
+    Wave."
+  - Hero "Reserva tu sesión" — mismo mensaje que el header.
+  - `SessionCard` Sesiones 1 a 1, "Reservar mi cita →" — "Hola, quiero
+    reservar una sesión 1 a 1."
+  - CTA final, "Reserva tu sesión" — mismo mensaje que el header.
+  - FAQ, respuesta de "¿Por dónde puedo empezar?" — enlace de contacto
+    directo a WhatsApp con "Hola, tengo dudas sobre cómo empezar en Your
+    Wave."
+  - Footer, "Hablemos" — "WhatsApp" en vez de "Teléfono · por confirmar",
+    enlazado con `whatsappLink('Hola, quiero más información sobre Your
+    Wave.')`.
+- CTA que se quedan como ancla (no WhatsApp): "Ver cursos", "Explorar
+  sesiones →", "Ver los cursos →", "Descubrir Cometas →", "Conocer mi
+  historia →", "Ver programa →" (×3).
+- **Comunidad**: la tribu se gestiona con una comunidad de WhatsApp propia
+  (no newsletter por correo, no plataforma aparte). Como todavía no existe
+  el enlace de invitación de esa comunidad (se crea desde la app de
+  WhatsApp, no es el mismo tipo de enlace que `wa.me`), el CTA "Únete a la
+  tribu" queda con marcador visible "Enlace a la comunidad de WhatsApp ·
+  pendiente" en lugar de un `href` falso. Se sustituye por el enlace real
+  en cuanto exista la comunidad.
+
 ## Componentes (`src/components/`)
 
 Puerto 1:1 de `design-system/components/*` a `.astro`, sin JS de cliente,
@@ -188,8 +228,9 @@ propio mockup.
     formas de conectar." 3 puntos: "Recursos — Prácticas y audios para
     acompañar tu día.", "Parte de olas — Novedades y próximas sesiones, en
     tu correo.", "Encuentros — Quedadas en la playa para practicar juntos."
-    Meta "Acceso y encuentros · por confirmar". CTA "Únete a la tribu".
-    Imagen placeholder "no representa a miembros reales".
+    Meta "Acceso y encuentros · por confirmar". CTA "Únete a la tribu" →
+    comunidad de WhatsApp, enlace pendiente (ver sección "Contacto y
+    reservas"). Imagen placeholder "no representa a miembros reales".
 12. **Testimonios — 3 `Testimonial`** (eyebrow "EXPERIENCIAS COMPARTIDAS",
     H2 "Después de la ola."):
     - "«Testimonio real de una participante sobre cómo se sintió después de
@@ -204,7 +245,8 @@ propio mockup.
     reservar."):
     - "¿Por dónde puedo empezar?" → "Con una sesión 1 a 1, una práctica en
       grupo o un curso. Si dudas, escríbenos y te ayudamos a elegir. Canal
-      de contacto: por confirmar."
+      de contacto: WhatsApp." con el "escríbenos" enlazado a WhatsApp (ver
+      sección "Contacto y reservas").
     - "¿Necesito experiencia previa o saber surfear?"
     - "¿Qué son las experiencias Cometas?"
     - "¿Cómo reservo y puedo cambiar la fecha?"
@@ -219,7 +261,7 @@ propio mockup.
 15. **Footer**: columnas "Explorar" (Sesiones 1 a 1, Sesiones grupales,
     Cometas, Surf & Breath, Cursos Your Wave), "Your Wave" (Sobre mí,
     Comunidad, Preguntas frecuentes, Contacto), "Hablemos" (Correo · por
-    confirmar, Teléfono · por confirmar, Instagram · por confirmar). Logo +
+    confirmar, WhatsApp, Instagram · por confirmar). Logo +
     tagline "Breathwork, meditación y coaching junto al mar." Legal: ©
     2026 Your Wave, Privacidad, Términos, Aviso legal, Cookies.
 
