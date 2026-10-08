@@ -20,3 +20,7 @@ Consult these guides before working on related tasks:
 - [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+
+## Sistema de diseño Your Wave
+
+Antes de crear o modificar cualquier página, componente o estilo, lee `design-system/README.md` (guía de marca) y `design-system/USO-EN-ASTRO.md` (cómo integrarlo). Usa siempre los tokens de `design-system/tokens.json` / `tokens.css` en lugar de valores sueltos, y sigue las reglas de cada componente en `design-system/components/*/README.md`. No inventes testimonios, cifras ni precios.

@@ -1,0 +1,66 @@
+@import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&family=Nunito+Sans:wght@400;600;700&family=Sacramento&display=swap");
+/* Your Wave — component styles. Every value comes from tokens.css. */
+body { background: var(--surface); color: var(--ink); font-family: var(--font-sans); margin: 0; }
+.yw-row { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; padding: var(--space-6); }
+.yw-stack { display: grid; gap: var(--space-4); padding: var(--space-6); }
+:where(.yw-btn, .yw-faq summary):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Button — pill, like a board */
+.yw-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); border: 2px solid transparent; border-radius: var(--radius-pill); padding: var(--space-3) var(--space-6); font: 700 15px/20px var(--font-sans); letter-spacing: .02em; cursor: pointer; text-decoration: none; transition: background-color .2s ease, color .2s ease; }
+.yw-btn-primary { background: var(--primary); color: var(--on-primary); }
+.yw-btn-primary:hover { background: var(--primary-hover); }
+.yw-btn-secondary { background: transparent; color: var(--ink); border-color: var(--ink); }
+.yw-btn-secondary:hover { background: var(--sand); }
+.yw-btn-ghost { background: transparent; color: var(--link); padding-left: var(--space-2); padding-right: var(--space-2); }
+.yw-btn-ghost:hover { text-decoration: underline; text-underline-offset: 4px; }
+.yw-btn-lg { padding: var(--space-4) var(--space-8); font-size: 17px; }
+.yw-btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* Badge — discipline tags */
+.yw-badge { display: inline-flex; align-items: center; gap: var(--space-1); border-radius: var(--radius-pill); padding: var(--space-1) var(--space-3); font: 700 12px/16px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; }
+.yw-badge-neutral { background: var(--sand); color: var(--ink); }
+.yw-badge-breathwork { background: var(--wave-sky); color: var(--on-bright); }
+.yw-badge-meditacion { background: var(--wave-indigo); color: var(--on-deep); }
+.yw-badge-coaching { background: var(--wave-ocean); color: var(--on-deep); }
+.yw-badge-cometa { background: var(--sun); color: var(--on-bright); }
+.yw-badge-surf { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+
+/* Ray marker — the logo's lime triangles as a bullet */
+.yw-ray { display: inline-block; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 11px solid var(--sun); }
+.yw-rays { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
+.yw-rays li { display: flex; gap: var(--space-3); align-items: baseline; }
+.yw-rays li::before { content: ""; flex: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 9px solid var(--sun); transform: translateY(-1px); }
+
+/* SessionCard */
+.yw-card { background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column; max-width: 360px; transition: box-shadow .25s ease; }
+.yw-card:hover { box-shadow: var(--shadow-soft); }
+.yw-card-media { aspect-ratio: 16 / 10; background: var(--sand); display: block; width: 100%; object-fit: cover; }
+.yw-card-body { padding: var(--space-6); display: grid; gap: var(--space-3); }
+.yw-card-title { margin: 0; font: 700 21px/28px var(--font-sans); color: var(--ink); }
+.yw-card-meta { margin: 0; font: 400 14px/20px var(--font-sans); color: var(--ink-muted); }
+.yw-card-text { margin: 0; font: 400 16px/26px var(--font-sans); color: var(--ink); }
+.yw-card-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: 0 var(--space-6) var(--space-6); }
+.yw-card-price { font: 400 22px/28px var(--font-display); color: var(--ink); }
+
+/* WaveDivider — the swell between sections */
+.yw-wave { display: block; width: 100%; height: auto; }
+.yw-wave .yw-wave-back { opacity: .55; }
+
+/* Testimonial */
+.yw-quote { margin: 0; background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-md); padding: var(--space-8); max-width: 520px; display: grid; gap: var(--space-4); }
+.yw-quote-text { margin: 0; font: 300 22px/32px var(--font-display); color: var(--ink); }
+.yw-quote-who { display: flex; align-items: center; gap: var(--space-3); font: 400 14px/20px var(--font-sans); color: var(--ink-muted); }
+.yw-quote-who strong { color: var(--ink); font-weight: 700; display: block; }
+.yw-quote-avatar { width: 44px; height: 44px; border-radius: var(--radius-pill); background: var(--sand); object-fit: cover; flex: none; }
+
+/* FaqItem */
+.yw-faq { border-bottom: 1px solid var(--line); max-width: 640px; }
+.yw-faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); padding: var(--space-4) 0; font: 700 17px/24px var(--font-sans); color: var(--ink); border-radius: var(--radius-sm); }
+.yw-faq summary::-webkit-details-marker { display: none; }
+.yw-faq-icon { flex: none; width: 28px; height: 28px; border-radius: var(--radius-pill); border: 1.5px solid var(--ink); position: relative; transition: transform .25s ease; }
+.yw-faq-icon::before, .yw-faq-icon::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 1.5px; background: var(--ink); transform: translate(-50%, -50%); }
+.yw-faq-icon::after { transform: translate(-50%, -50%) rotate(90deg); }
+.yw-faq[open] .yw-faq-icon { transform: rotate(45deg); }
+.yw-faq-body { padding: 0 0 var(--space-6); font: 400 16px/26px var(--font-sans); color: var(--ink-muted); }
+
+@media (prefers-reduced-motion: reduce) { .yw-btn, .yw-card, .yw-faq-icon { transition: none; } }

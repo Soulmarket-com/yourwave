@@ -1,46 +1,31 @@
-# Astro Starter Kit: Basics
+# Yourwave
+
+Sitio estático construido con Astro, Tailwind CSS y daisyUI.
+
+## Desarrollo
 
 ```sh
-npm create astro@latest -- --template basics
+npm install
+npm run dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Producción
 
-## 🚀 Project Structure
+Define `SITE_URL` con el origen público definitivo antes de compilar. Astro usará ese valor para generar URLs canónicas, `robots.txt` y el sitemap XML.
 
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+```sh
+SITE_URL=https://tu-dominio.example npm run build
+npm run preview
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+Configura la misma variable en el entorno de build del proveedor de despliegue. Sin ella, no se publican URLs canónicas ni sitemap, para evitar indexar un dominio incorrecto.
 
-## 🧞 Commands
+## Contenido y metadatos
 
-All commands are run from the root of the project, from a terminal:
+El layout común está en `src/layouts/Layout.astro`. Cada página puede pasar `title`, `description`, `canonicalUrl` e `image`. La identidad y descripción por defecto se mantienen en `src/config/seo.ts`.
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+El layout genera Open Graph, Twitter Cards y JSON-LD de `Organization`, `WebSite` y `WebPage` usando únicamente datos disponibles en el sitio. Añade datos como perfiles `sameAs`, dirección o contacto solo cuando estén verificados. Para GEO, prioriza contenido original, preciso, con encabezados semánticos y respuestas directas; los datos estructurados lo complementan, no lo sustituyen.
 
-## 👀 Want to learn more?
+## Rendimiento
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Las páginas se prerenderizan como HTML estático y no requieren JavaScript de cliente por defecto. Para imágenes locales, usa `Image` de `astro:assets` con dimensiones y texto alternativo; incorpora componentes hidratados solo cuando una interacción lo necesite.

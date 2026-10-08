@@ -1,5 +1,5 @@
 {
-  "name": "--typescript",
+  "name": "yourwave",
   "type": "module",
   "version": "0.0.1",
   "engines": {
@@ -12,9 +12,15 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.3.7"
+    "@astrojs/sitemap": "^3.7.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.7",
+    "tailwindcss": "^4.3.3"
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "daisyui": "^5.7.47"
   }
 }

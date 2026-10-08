@@ -1,0 +1,80 @@
+/* Your Wave — generated from tokens.json */
+
+:root, [data-theme="light"] {
+  --surface: #fbf8f2;
+  --surface-raised: #ffffff;
+  --sand: #efe6d6;
+  --line: #ddd5c6;
+  --ink: #16142b;
+  --ink-muted: #55526b;
+  --wave-indigo: #322783;
+  --wave-ocean: #01499b;
+  --wave-blue: #007ac3;
+  --wave-sky: #009fe3;
+  --sun: #dcdc00;
+  --on-deep: #ffffff;
+  --on-bright: #16142b;
+  --primary: var(--wave-indigo);
+  --on-primary: #ffffff;
+  --primary-hover: #241c63;
+  --link: var(--wave-ocean);
+  --focus: #007ac3;
+  --success: #1d6b47;
+  --danger: #a8321c;
+  --shadow-soft: 0 8px 24px rgba(50, 39, 131, 0.10);
+}
+
+[data-theme="dark"] {
+  --surface: #0f0d24;
+  --surface-raised: #1a1738;
+  --sand: #24203f;
+  --line: #3a3560;
+  --ink: #f5f2ea;
+  --ink-muted: #b9b5cf;
+  --primary: var(--wave-sky);
+  --on-primary: #0f0d24;
+  --primary-hover: #33b5ec;
+  --link: #6fcdf2;
+  --focus: #dcdc00;
+  --success: #6fd6a2;
+  --danger: #ff9c84;
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.40);
+}
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-24: 96px;
+  --radius-sm: 6px;
+  --radius-md: 16px;
+  --radius-lg: 32px;
+  --radius-pill: 999px;
+  --font-display: "Josefin Sans", "Century Gothic", system-ui, sans-serif;
+  --font-sans: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --font-script: "Sacramento", "Brush Script MT", cursive;
+}
+
+.yw-display-xl { font-family: var(--font-display); font-size: 64px; line-height: 68px; font-weight: 300; letter-spacing: 0.02em; }
+
+.yw-heading-1 { font-family: var(--font-display); font-size: 44px; line-height: 50px; font-weight: 300; }
+
+.yw-heading-2 { font-family: var(--font-display); font-size: 32px; line-height: 38px; font-weight: 400; }
+
+.yw-eyebrow { font-family: var(--font-display); font-size: 13px; line-height: 16px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+
+.yw-heading-3 { font-family: var(--font-sans); font-size: 21px; line-height: 28px; font-weight: 700; }
+
+.yw-body-lg { font-family: var(--font-sans); font-size: 18px; line-height: 29px; font-weight: 400; }
+
+.yw-body { font-family: var(--font-sans); font-size: 16px; line-height: 26px; font-weight: 400; }
+
+.yw-small { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 400; }
+
+.yw-button { font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 700; letter-spacing: 0.02em; }
+
+.yw-script { font-family: var(--font-script); font-size: 44px; line-height: 44px; font-weight: 400; }
