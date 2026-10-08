@@ -1,22 +1,28 @@
-# Home: sistema de diseño, SEO, GEO y rendimiento — Implementation Plan
+# Home: sistema de diseño, SEO, GEO, rendimiento y bilingüe (ES/EN) — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the Your Wave home page (`src/pages/index.astro`) on top of the
-existing design system, with the real mockup copy, WhatsApp-based CTAs, and a
-correct SEO/GEO/performance baseline.
+**Goal:** Build the Your Wave home page in Spanish (`/`) and English (`/en/`)
+on top of the existing design system, with the real mockup copy translated
+into both languages, WhatsApp-based CTAs, and a correct SEO/GEO/performance
+baseline.
 
-**Architecture:** Port the 6 React reference components (`design-system/components/`)
-to zero-JS `.astro` components that consume the existing `bundle.css` classes
-unmodified. Wire Tailwind v4's `@theme inline` to alias the design tokens so
-page layout can use plain Tailwind utilities (`bg-sand`, `py-24`, `gap-6`)
-without inventing new CSS. Assemble the home page as one `.astro` file built
-section-by-section from the mockup transcript in the spec. Fix a live SEO bug
-in `astro.config.mjs` and extend `Layout.astro`'s existing JSON-LD `@graph`
-with page-specific `FAQPage`/`Service` entries.
+**Architecture:** Port the 6 React reference components
+(`design-system/components/`) to zero-JS `.astro` components that consume the
+existing `bundle.css` classes unmodified. Wire Tailwind v4's `@theme inline`
+to alias the design tokens. Store all page copy in two typed content
+dictionaries (`src/content/home/es.ts`, `src/content/home/en.ts`) sharing one
+`HomeContent` interface. Build the entire page markup **once**, in
+`src/components/HomePage.astro`, parameterized by `lang` and `content`. Two
+thin page files (`src/pages/index.astro`, `src/pages/en/index.astro`) select
+the locale. Use Astro's native i18n routing (`astro:i18n`) for locale URLs
+and hreflang — no new dependencies. Fix a live SEO bug in `astro.config.mjs`
+and extend `Layout.astro`'s JSON-LD `@graph` with page-specific
+`FAQPage`/`Service` entries generated from whichever locale's content is
+rendering.
 
-**Tech Stack:** Astro 7, Tailwind v4 (`@tailwindcss/vite`), `@astrojs/sitemap`.
-No new dependencies.
+**Tech Stack:** Astro 7 (including `astro:i18n`), Tailwind v4
+(`@tailwindcss/vite`), `@astrojs/sitemap`. No new dependencies.
 
 **Spec:** `docs/superpowers/specs/2026-10-08-home-design-system-seo-geo-design.md`
 
@@ -28,52 +34,56 @@ No new dependencies.
   tokens — never a bare hex value or an arbitrary pixel size in page code.
 - `design-system/tokens.css` and `design-system/components/bundle.css` are
   generated source-of-truth files — never edit them.
-- No invented testimonials, prices, figures, or photography. Every piece of
-  missing real content uses the exact placeholder wording already present in
-  `doc/propuesta-v2/Your Wave · Home escritorio v2.svg` (transcribed in the
-  spec's "Estructura de la home y contenido" section).
-- Text is Spanish, tuteo, no emojis, no exclamation marks in headings (per
-  `design-system/README.md`).
-- `WaveDivider` is used at most 3 times on the page, only between sections of
-  different background color.
+- No invented testimonials, prices, figures, or photography, **in either
+  language**. Every piece of missing real content uses the same placeholder
+  wording the mockup uses, translated — never new invented copy.
+- Spanish is tuteo, no emojis, no exclamation marks in headings. English
+  content mirrors the same voice (direct, calm, no exclamation marks,
+  no emojis) — it is a translation of the Spanish mockup copy, not new copy.
+- `WaveDivider` is used at most 3 times per page render, only between
+  sections of different background color.
 - WhatsApp number: `34628757954` (no `+`, no spaces, for `wa.me` links) —
-  lives only in `src/config/contact.ts`.
-- Reservation/contact CTAs open WhatsApp; exploratory CTAs (`Ver`, `Explorar`,
-  `Conocer`, `Descubrir`) stay internal anchors. See spec's "Contacto y
-  reservas" section for the exact mapping.
-- No new pages/routes. The header nav and footer link to in-page anchors only.
-- There is no test framework in this repo and the spec explicitly decided not
-  to add one (static content, no business logic). The verification gate for
-  every task is `npm run build` succeeding, plus a final manual browser pass.
+  lives only in `src/config/contact.ts`. Every CTA's prefilled message is in
+  the content dictionary of its own language.
+- Reservation/contact CTAs open WhatsApp; exploratory CTAs stay internal
+  anchors (same anchor IDs in both languages — anchors are structural, not
+  translated).
+- No new pages/routes beyond the two home locales. No stub pages for
+  `/sesiones`, `/cometas`, etc. in either language.
+- Spanish is the default locale at `/` (`prefixDefaultLocale: false`);
+  English lives at `/en/`.
+- There is no test framework in this repo and the spec explicitly decided
+  not to add one. The verification gate for every task is `npm run build`
+  succeeding, plus a final manual browser pass in both languages.
 
 ## Review Focus
 
 - **`SITE_URL` env var absence/presence**: `astro.config.mjs` must produce a
   working `site`, sitemap and canonical/JSON-LD both with and without
-  `SITE_URL` set — the bug being fixed is exactly "forgot to set the env var
-  and SEO silently disappears." Task 1 builds both ways.
-- **FAQ visible text vs. `FAQPage` JSON-LD text diverging** — a reasonable
-  person (and a search engine) expects the schema to say exactly what the
-  page says. Task 9 sources both from one `faqs` array so they can't drift,
-  and the task's check confirms the built HTML's JSON-LD block contains the
-  same answer strings as the rendered accordion.
-- **WhatsApp links with accented/punctuated Spanish text** (`¿`, `¡`, `í`,
-  spaces) — a malformed `wa.me` URL would silently fail to prefill the
-  message. Task 1's `whatsappLink` helper uses `encodeURIComponent`, and
-  Task 9 explicitly checks one generated URL decodes back to the original
-  Spanish sentence.
-- **Narrow mobile viewport (< 375px)** — a reasonable visitor on an older
-  phone expects the header, hero and card grids not to overflow horizontally.
-  Task 10's manual verification checks this width explicitly, not just the
-  two mockup breakpoints.
-- **Text contrast on the dark sections** (`Comunidad`, final CTA, footer) —
-  `opacity-80`/`opacity-90` on `on-deep` text must still read clearly against
-  `wave-indigo`. Task 10's manual verification checks this visually since
-  there's no automated contrast checker in the toolchain.
+  `SITE_URL` set. Task 1 builds both ways.
+- **English and Spanish content drifting out of shape** — a reasonable
+  developer adding a 16th section later could update `es.ts` and forget
+  `en.ts`, silently breaking the English page (missing field, blank text).
+  Both files implement the same `HomeContent` interface under
+  `strict` TypeScript, so a missing field is a type error; Task 5's check
+  explicitly confirms `en.ts` doesn't compile if a field is dropped.
+- **FAQ visible text vs. `FAQPage` JSON-LD text diverging**, independently in
+  each language — Task 9 sources both from the same `content.faq.items`
+  array per locale, and its check confirms the built HTML of **each**
+  locale's JSON-LD block matches that locale's visible accordion text.
+- **A visitor on the English page reaching a Spanish WhatsApp message** (or
+  vice versa) — every `whatsappLink()` call in `HomePage.astro` must read
+  its message from `content.whatsapp.*`, never a literal string. Task 10's
+  check opens one generated link per locale and confirms the decoded text
+  matches that locale's language.
+- **Narrow mobile viewport (< 375px) in both languages** — English strings
+  run longer than Spanish for some labels (e.g. "Cursos Your Wave" vs "Your
+  Wave Courses"); Task 11's manual verification checks both locales at this
+  width, not just Spanish.
 
 ---
 
-## Task 1: Cleanup, SEO config fix, and WhatsApp helper
+## Task 1: Cleanup, SEO config fix, i18n routing config, WhatsApp helper
 
 **Files:**
 - Delete: `src/components/Welcome.astro`
@@ -84,8 +94,9 @@ No new dependencies.
 - Create: `src/config/contact.ts`
 
 **Interfaces:**
-- Produces: `whatsappNumber: string`, `whatsappLink(message: string): string` from `src/config/contact.ts`, used by every CTA from Task 5 onward.
-- Produces: `siteName: string`, `defaultDescription: string` from `src/config/seo.ts` (already consumed by `Layout.astro`, unchanged contract).
+- Produces: `whatsappNumber: string`, `whatsappLink(message: string): string` from `src/config/contact.ts`, consumed from Task 7 onward.
+- Produces: `siteName: string`, `defaultDescription: string` from `src/config/seo.ts`, consumed by `Layout.astro` (unchanged contract).
+- Produces: i18n routing config in `astro.config.mjs` (`defaultLocale: 'es'`, `locales: ['es', 'en']`), consumed by `astro:i18n`'s `getRelativeLocaleUrl` in Task 2 and by the page files in Task 10.
 
 - [ ] **Step 1: Delete the unused Astro starter scaffold**
 
@@ -96,7 +107,7 @@ git rm src/components/Welcome.astro src/assets/astro.svg src/assets/background.s
 Nothing in `src/pages/index.astro` imports `Welcome.astro` (confirmed: it
 only imports `Layout.astro`), so this is a pure deletion.
 
-- [ ] **Step 2: Fix the `SITE_URL` fallback bug in `astro.config.mjs`**
+- [ ] **Step 2: Fix the `SITE_URL` fallback bug and add i18n routing to `astro.config.mjs`**
 
 Replace the full file content:
 
@@ -114,16 +125,28 @@ export default defineConfig({
   site: siteUrl,
   integrations: [sitemap()],
   compressHTML: true,
+  i18n: {
+    defaultLocale: 'es',
+    locales: ['es', 'en'],
+    routing: {
+      prefixDefaultLocale: false,
+    },
+  },
   vite: {
     plugins: [tailwindcss()]
   }
 });
 ```
 
-Before this fix, `site` and the `sitemap()` integration were only added when
-`process.env.SITE_URL` was set, so a plain `astro build` shipped with no
-canonical URL, no sitemap, and no JSON-LD `url` fields. Now `https://yourwave.es`
-is the default, still overridable via `SITE_URL` for staging builds.
+Before the `site`/sitemap fix, `site` and the `sitemap()` integration were
+only added when `process.env.SITE_URL` was set, so a plain `astro build`
+shipped with no canonical URL, no sitemap, and no JSON-LD `url` fields. Now
+`https://yourwave.es` is the default, still overridable via `SITE_URL` for
+staging builds. The new `i18n` block makes Astro serve
+`src/pages/index.astro` at `/` (Spanish, default locale, no prefix) and
+`src/pages/en/index.astro` at `/en/` (English) — both built in Task 10 — and
+makes `astro:i18n`'s `getRelativeLocaleUrl()` helper available (used in
+Task 2).
 
 - [ ] **Step 3: Update `src/config/seo.ts` with real brand copy**
 
@@ -151,15 +174,17 @@ npm run build
 SITE_URL=https://staging.yourwave.es npm run build
 ```
 
-Expected: both complete with no errors. Check `dist/robots.txt` (or the
-build log) confirms a sitemap link is present in both runs, and
+Expected: both complete with no errors (the i18n config is valid even
+though no `en` page exists yet — Astro only requires the matching page file
+to exist for a locale route to be reachable, and `src/pages/index.astro`
+still exists as the pre-existing placeholder). Check
 `dist/sitemap-index.xml` exists after each build.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add -A
-git commit -m "Fix SITE_URL fallback, remove Astro starter scaffold, add WhatsApp helper"
+git commit -m "Fix SITE_URL fallback, add i18n routing config, remove Astro starter scaffold, add WhatsApp helper"
 ```
 
 ---
@@ -171,14 +196,14 @@ git commit -m "Fix SITE_URL fallback, remove Astro starter scaffold, add WhatsAp
 - Modify: `src/layouts/Layout.astro`
 
 **Interfaces:**
-- Consumes: nothing new.
 - Produces: Tailwind utilities `bg-surface`, `bg-surface-raised`, `bg-sand`,
   `bg-wave-indigo`, `bg-wave-ocean`, `bg-wave-blue`, `bg-wave-sky`, `bg-sun`,
   `bg-on-deep`, `bg-primary`, `bg-on-primary`, `bg-link`, `bg-focus` (and
   their `text-*`/`border-*` equivalents), `rounded-sm/md/lg/pill`, aliased to
-  the design tokens — consumed by every section task from Task 5 onward.
-  Also produces `Layout.astro`'s new `extraGraph?: Record<string, unknown>[]`
-  prop, consumed by Task 9.
+  the design tokens — consumed by `HomePage.astro` from Task 7 onward.
+- Produces `Layout.astro`'s new props: `lang?: 'es' | 'en'` (default `'es'`)
+  and `extraGraph?: Record<string, unknown>[]` — both consumed by
+  `HomePage.astro` (via the page files) from Task 7 onward.
 
 - [ ] **Step 1: Rewrite `src/styles/global.css`**
 
@@ -219,9 +244,10 @@ git commit -m "Fix SITE_URL fallback, remove Astro starter scaffold, add WhatsAp
 — by reusing the `components` name, our component CSS sits below Tailwind's
 `utilities` layer, so a utility class like `text-on-deep` can still override
 a `.yw-btn-secondary` color when both are applied to the same element (needed
-in Task 8/9 for buttons on the dark sections). Without `layer(components)`,
-`bundle.css` would be unlayered CSS, which always beats every layered rule
-regardless of specificity or source order — utilities could never win.
+for buttons on the dark sections, from Task 8 onward). Without
+`layer(components)`, `bundle.css` would be unlayered CSS, which always beats
+every layered rule regardless of specificity or source order — utilities
+could never win.
 
 - [ ] **Step 2: Add font preconnect hints to `Layout.astro`**
 
@@ -233,7 +259,7 @@ meta tag, add:
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 ```
 
-- [ ] **Step 3: Add an `extraGraph` prop to `Layout.astro` for page-specific JSON-LD**
+- [ ] **Step 3: Add `lang` and `extraGraph` props to `Layout.astro`**
 
 Current `Layout.astro` frontmatter (`src/layouts/Layout.astro`):
 
@@ -258,12 +284,15 @@ const {
 Change to:
 
 ```astro
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
 interface Props {
 	title?: string;
 	description?: string;
 	canonicalUrl?: string;
 	image?: string;
 	noIndex?: boolean;
+	lang?: 'es' | 'en';
 	extraGraph?: Record<string, unknown>[];
 }
 
@@ -273,9 +302,19 @@ const {
 	canonicalUrl,
 	image,
 	noIndex = false,
+	lang = 'es',
 	extraGraph = [],
 } = Astro.props;
+
+const alternateEs = Astro.site ? new URL(getRelativeLocaleUrl('es', '/'), Astro.site) : undefined;
+const alternateEn = Astro.site ? new URL(getRelativeLocaleUrl('en', '/'), Astro.site) : undefined;
 ```
+
+(Put the `import { getRelativeLocaleUrl } from 'astro:i18n';` line alongside
+the existing `import { defaultDescription, siteName } from '../config/seo';`
+line at the top of the frontmatter.)
+
+Change `<html lang="es">` to `<html lang={lang}>`.
 
 And in the `structuredData` block, change the `@graph` array from:
 
@@ -319,21 +358,31 @@ to:
 (Keep the existing `Organization`/`WebSite`/`WebPage` object bodies exactly
 as they are today — only the trailing `...extraGraph,` is new.)
 
-- [ ] **Step 4: Verify the build succeeds**
+- [ ] **Step 4: Add hreflang alternate links**
+
+In `<head>`, right after the existing `{canonical && <link rel="canonical" ...}` line, add:
+
+```astro
+{alternateEs && <link rel="alternate" hreflang="es" href={alternateEs.href} />}
+{alternateEn && <link rel="alternate" hreflang="en" href={alternateEn.href} />}
+{alternateEs && <link rel="alternate" hreflang="x-default" href={alternateEs.href} />}
+```
+
+- [ ] **Step 5: Verify the build succeeds**
 
 ```bash
 npm run build
 ```
 
 Expected: completes with no errors. The current `src/pages/index.astro`
-(`Yourwave` placeholder `<h1>`) still renders fine since `extraGraph`
-defaults to `[]`.
+(`Yourwave` placeholder `<h1>`) still renders fine since `lang` defaults to
+`'es'` and `extraGraph` defaults to `[]`.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/styles/global.css src/layouts/Layout.astro
-git commit -m "Wire design system tokens into Tailwind theme and Layout JSON-LD"
+git commit -m "Wire design system tokens into Tailwind theme; add lang and hreflang support to Layout"
 ```
 
 ---
@@ -351,8 +400,9 @@ git commit -m "Wire design system tokens into Tailwind theme and Layout JSON-LD"
   type="button">` otherwise.
 - Produces: `Badge` and `type Discipline = 'breathwork' | 'meditacion' |
   'coaching' | 'cometa' | 'surf'` — props `tone?: 'neutral' | Discipline`
-  (default `'neutral'`), `class?: string`; default slot overrides the
-  built-in label.
+  (default `'neutral'`), `class?: string`; default slot is the label text
+  (always pass it explicitly from Task 7 onward — the content is
+  bilingual, so there is no language-correct hardcoded default).
 - Both consumed by every task from Task 4 onward.
 
 - [ ] **Step 1: Write `src/components/Button.astro`**
@@ -391,21 +441,16 @@ export interface Props {
 	class?: string;
 }
 
-const BADGE_LABEL: Record<Discipline, string> = {
-	breathwork: 'Breathwork',
-	meditacion: 'Meditación',
-	coaching: 'Coaching · Hipnoterapia',
-	cometa: 'Cometa',
-	surf: 'Surf',
-};
-
 const { tone = 'neutral', class: className } = Astro.props;
 const classes = ['yw-badge', `yw-badge-${tone}`, className].filter(Boolean).join(' ');
-const fallbackLabel = tone === 'neutral' ? '' : BADGE_LABEL[tone];
 ---
 
-<span class={classes}><slot>{fallbackLabel}</slot></span>
+<span class={classes}><slot /></span>
 ```
+
+(No built-in label map this time — the original React component's default
+Spanish labels can't be correct for both languages, so every call site
+supplies its own slot text from the matching locale's content dictionary.)
 
 - [ ] **Step 3: Verify the build succeeds**
 
@@ -414,7 +459,7 @@ npm run build
 ```
 
 Expected: completes with no errors (neither component is used by any page
-yet, so this just confirms both files compile as valid Astro components).
+yet).
 
 - [ ] **Step 4: Commit**
 
@@ -434,11 +479,12 @@ git commit -m "Add Button and Badge components"
 - Create: `src/components/FaqItem.astro`
 
 **Interfaces:**
-- Consumes: `Button` and `Badge` (and `Discipline` type) from Task 3.
+- Consumes: `Button` and `Badge` from Task 3.
 - Produces: `SessionCard` — props `title: string`, `disciplines?:
   Discipline[]`, `meta?: string`, `description?: string`, `price?: string`,
   `image?: string`, `imageAlt?: string`, `actionLabel?: string` (default
-  `'Reservar'`), `href?: string`, `class?: string`.
+  `'Reservar'` — override it from content for the English page), `href?:
+  string`, `class?: string`.
 - Produces: `WaveDivider` — props `from?: string` (default `'transparent'`),
   `to?: string` (default `'var(--sand)'`), `back?: string`, `height?: number`
   (default `72`), `flip?: boolean`, `layered?: boolean` (default `true`),
@@ -447,7 +493,7 @@ git commit -m "Add Button and Badge components"
   string`, `photo?: string`, `class?: string`.
 - Produces: `FaqItem` — props `question: string`, `defaultOpen?: boolean`,
   `class?: string`; default slot is the answer body.
-- All four consumed from Task 5 onward.
+- All four consumed from Task 7 onward.
 
 - [ ] **Step 1: Write `src/components/SessionCard.astro`**
 
@@ -504,6 +550,13 @@ const classes = ['yw-card', className].filter(Boolean).join(' ');
 	</div>
 </article>
 ```
+
+(This plan's actual card usage in Task 7/8 never passes `disciplines` — the
+four "Encuentra tu ola" / "Find your wave" cards and the three course
+example cards render their badges directly rather than through this prop,
+so they can supply bilingual badge labels. The prop stays for contract
+fidelity with `design-system/components/index.d.ts` and is exercised by the
+`disciplines`-less path.)
 
 - [ ] **Step 2: Write `src/components/WaveDivider.astro`**
 
@@ -606,47 +659,826 @@ git commit -m "Add SessionCard, WaveDivider, Testimonial and FaqItem components"
 
 ---
 
-## Task 5: Home page shell — Header, Hero, Prueba social
+## Task 5: Content type and Spanish content dictionary
 
 **Files:**
-- Modify: `src/pages/index.astro` (full rewrite)
+- Create: `src/content/home/types.ts`
+- Create: `src/content/home/es.ts`
 
 **Interfaces:**
-- Consumes: `Layout` (`src/layouts/Layout.astro`), `Button`, `whatsappLink`/`whatsappNumber` from `src/config/contact.ts`.
-- Produces: the `faqs`/`serviceJsonLd` frontmatter arrays are introduced empty here and filled in by Task 9; sections 1-3 of the page are final from this task on.
+- Produces: `export interface HomeContent` from `src/content/home/types.ts`,
+  consumed by `es.ts` (this task), `en.ts` (Task 6), and `HomePage.astro`
+  (Task 7 onward).
+- Produces: `export const es: HomeContent` from `src/content/home/es.ts`,
+  consumed by `src/pages/index.astro` (Task 10).
 
-- [ ] **Step 1: Replace `src/pages/index.astro` with the page shell, header, hero and prueba social**
+- [ ] **Step 1: Write `src/content/home/types.ts`**
+
+```ts
+export interface HomeContent {
+	meta: { title: string; description: string };
+	nav: {
+		sesiones: string;
+		cometas: string;
+		cursos: string;
+		comunidad: string;
+		sobreMi: string;
+		reserve: string;
+		switchLabel: string;
+	};
+	whatsapp: {
+		reserve: string;
+		reserve1a1: string;
+		faqHelp: string;
+		footerInfo: string;
+		footerContact: string;
+	};
+	badges: {
+		breathwork: string;
+		meditacion: string;
+		coaching: string;
+		surf: string;
+		sample: string;
+	};
+	hero: {
+		eyebrow: string;
+		h1: string;
+		subtitle: string;
+		ctaPrimary: string;
+		ctaSecondary: string;
+		trust: string;
+		imageCaption: string;
+		scriptPre: string;
+		scriptWord: string;
+		scriptPost: string;
+	};
+	social: {
+		eyebrow: string;
+		stat1Value: string;
+		stat1Label: string;
+		stat2Value: string;
+		stat2Label: string;
+		quote: string;
+		quoteNote: string;
+	};
+	benefits: { title: string; text: string }[];
+	sessions: {
+		eyebrow: string;
+		title: string;
+		intro: string;
+		cards: { title: string; description: string; meta: string; actionLabel: string }[];
+	};
+	cometas: {
+		eyebrow: string;
+		titlePre: string;
+		scriptWord: string;
+		titlePost: string;
+		text: string;
+		cta: string;
+		steps: { label: string; value: string }[];
+		note: string;
+	};
+	surfBreath: {
+		eyebrow: string;
+		title: string;
+		subtitle: string;
+		imageCaption: string;
+		steps: { number: string; title: string; text: string }[];
+		note: string;
+	};
+	mission: {
+		eyebrow: string;
+		title: string;
+		text1: string;
+		text2: string;
+		values: string[];
+		imageCaption: string;
+	};
+	founder: {
+		eyebrow: string;
+		title: string;
+		portraitCaption: string;
+		text: string;
+		note: string;
+		cta: string;
+	};
+	courses: {
+		eyebrow: string;
+		title: string;
+		viewAll: string;
+		intro: string;
+		cards: { badgeSample: string; title: string; text: string; meta: string; price: string; cta: string }[];
+	};
+	community: {
+		eyebrow: string;
+		title: string;
+		text: string;
+		points: { title: string; text: string }[];
+		meta: string;
+		cta: string;
+		pendingNote: string;
+		imageCaption: string;
+	};
+	testimonials: {
+		eyebrow: string;
+		title: string;
+		items: { quote: string; name: string; detail: string }[];
+		note: string;
+	};
+	faq: {
+		eyebrow: string;
+		title: string;
+		intro: string;
+		items: { question: string; answer: string }[];
+		firstAnswerPrefix: string;
+		firstAnswerLink: string;
+		firstAnswerSuffix: string;
+	};
+	finalCta: {
+		eyebrow: string;
+		title: string;
+		text: string;
+		ctaPrimary: string;
+		ctaSecondary: string;
+		note: string;
+	};
+	footer: {
+		taglinePre: string;
+		scriptWord: string;
+		small: string;
+		exploreLabel: string;
+		explore: { label: string; href: string }[];
+		brandLabel: string;
+		sobreMi: string;
+		comunidad: string;
+		faqLabel: string;
+		contacto: string;
+		talkLabel: string;
+		emailPending: string;
+		whatsappLabel: string;
+		instagramPending: string;
+		copyright: string;
+		privacy: string;
+		terms: string;
+		notice: string;
+		cookies: string;
+	};
+}
+```
+
+- [ ] **Step 2: Write `src/content/home/es.ts`**
+
+```ts
+import type { HomeContent } from './types';
+
+export const es: HomeContent = {
+	meta: {
+		title: 'Your Wave — Breathwork, meditación y coaching junto al mar',
+		description:
+			'Sesiones de breathwork, meditación y coaching, individuales, grupales y en la playa, guiadas por una monitora de surf. Reserva por WhatsApp.',
+	},
+	nav: {
+		sesiones: 'Sesiones',
+		cometas: 'Cometas',
+		cursos: 'Cursos',
+		comunidad: 'Comunidad',
+		sobreMi: 'Sobre mí',
+		reserve: 'Reserva tu sesión',
+		switchLabel: 'EN',
+	},
+	whatsapp: {
+		reserve: 'Hola, quiero reservar una sesión en Your Wave.',
+		reserve1a1: 'Hola, quiero reservar una sesión 1 a 1.',
+		faqHelp: 'Hola, tengo dudas sobre cómo empezar en Your Wave.',
+		footerInfo: 'Hola, quiero más información sobre Your Wave.',
+		footerContact: 'Hola, quiero contactar con Your Wave.',
+	},
+	badges: {
+		breathwork: 'Breathwork',
+		meditacion: 'Meditación',
+		coaching: 'Coaching · Hipnoterapia',
+		surf: 'Surf',
+		sample: 'Ejemplo',
+	},
+	hero: {
+		eyebrow: 'BREATHWORK · MEDITACIÓN · COACHING',
+		h1: 'Respira, suelta y vuelve a tu centro.',
+		subtitle:
+			'Sesiones de breathwork, meditación y coaching para bajar el ritmo y escucharte. En individual, en grupo, en la playa o aprendiendo a tu ritmo. Como en el agua: una ola cada vez.',
+		ctaPrimary: 'Reserva tu sesión',
+		ctaSecondary: 'Ver cursos',
+		trust: 'Sesiones 1 a 1 · Grupales · Surf & Breath · Cursos',
+		imageCaption: 'Imagen de referencia · sustituir por fotografía',
+		scriptPre: 'Encuentra ',
+		scriptWord: 'tu ola',
+		scriptPost: ' propia',
+	},
+	social: {
+		eyebrow: 'CONFIANZA QUE SE CONSTRUYE',
+		stat1Value: '+000',
+		stat1Label: 'personas acompañadas · dato real pendiente',
+		stat2Value: '0,0 ★',
+		stat2Label: 'valoración en Google · pendiente',
+		quote: 'Aquí irá una frase real de una participante, con su nombre y permiso.',
+		quoteNote: 'Testimonio breve · contenido pendiente',
+	},
+	benefits: [
+		{ title: 'Tiempo para escucharte', text: 'Un espacio para observar cómo te sientes, sin exigencias.' },
+		{
+			title: 'Tu propio ritmo',
+			text: 'Elige el formato que encaja con tu momento: como elegir la ola que quieres coger.',
+		},
+		{
+			title: 'Aprendizaje compartido',
+			text: 'Herramientas y prácticas para seguir, en compañía o por tu cuenta.',
+		},
+	],
+	sessions: {
+		eyebrow: 'CUATRO FORMAS DE EMPEZAR',
+		title: 'Encuentra tu ola.',
+		intro: 'No necesitas tenerlo todo claro. Elige una primera experiencia que tenga sentido para ti.',
+		cards: [
+			{
+				title: 'Sesiones 1 a 1',
+				description: 'Acompañamiento personalizado y atención a lo que quieres explorar.',
+				meta: 'Cita según disponibilidad',
+				actionLabel: 'Reservar mi cita →',
+			},
+			{
+				title: 'Sesiones grupales',
+				description: 'Comparte la práctica. Una disciplina o una experiencia que lo combine todo.',
+				meta: 'Disciplinas y Cometas',
+				actionLabel: 'Explorar sesiones →',
+			},
+			{
+				title: 'Cursos Your Wave',
+				description: 'Programas con objetivos claros para dar continuidad a tu práctica, paso a paso.',
+				meta: 'Temario, objetivos e inscripción',
+				actionLabel: 'Ver los cursos →',
+			},
+			{
+				title: 'Comunidad',
+				description: 'Un punto de encuentro para compartir recursos, novedades y experiencias con la tribu.',
+				meta: 'Recursos, eventos y conexión',
+				actionLabel: 'Conocer la tribu →',
+			},
+		],
+	},
+	cometas: {
+		eyebrow: 'EN GRUPO · EXPERIENCIA COMBINADA',
+		titlePre: 'Una práctica. ',
+		scriptWord: 'Cometas',
+		titlePost: ' Muchas formas de vivirla.',
+		text: 'Sesiones inmersivas que unen las tres disciplinas en una sola experiencia: soltar con la respiración, ordenar con la meditación y salir con un propósito claro.',
+		cta: 'Descubrir Cometas →',
+		steps: [
+			{ label: 'RESPIRACIÓN', value: 'Breathwork' },
+			{ label: 'ATENCIÓN', value: 'Meditación' },
+			{ label: 'PROCESO', value: 'Coaching · Hipnoterapia' },
+		],
+		note: 'Próximas sesiones y formato · por confirmar',
+	},
+	surfBreath: {
+		eyebrow: 'MAR ADENTRO · NUEVA PROPUESTA',
+		title: 'Surf & Breath: respira en la orilla, coge tu ola.',
+		subtitle:
+			'Una experiencia que solo puede guiar una monitora de surf: preparar el cuerpo con la respiración y llevarla al agua.',
+		imageCaption: 'Imagen de referencia · sustituir por fotografía',
+		steps: [
+			{ number: '01', title: 'En la arena.', text: 'Breathwork para activar y calmar el cuerpo.' },
+			{ number: '02', title: 'En el agua.', text: 'Baño de olas guiado o iniciación al surf, a tu nivel.' },
+			{ number: '03', title: 'Después de la ola.', text: 'Meditación breve para integrar lo vivido.' },
+		],
+		note: 'POR VALIDAR CON YOUR WAVE',
+	},
+	mission: {
+		eyebrow: 'LO QUE NOS MUEVE',
+		title: 'Más espacio para ser. Menos prisa por llegar.',
+		text1:
+			'Your Wave nace para acercar la respiración, la atención y el aprendizaje personal a la vida cotidiana. Sin un único camino ni una forma correcta de vivir la experiencia.',
+		text2: 'El mar enseña a leer el momento, esperar, remar y soltar. Eso mismo trabajamos en cada sesión.',
+		values: ['Escucha antes que exigencia', 'Claridad en cada paso', 'Respeto por tu propio ritmo'],
+		imageCaption: 'Imagen de referencia · una pausa junto al mar',
+	},
+	founder: {
+		eyebrow: 'DETRÁS DE YOUR WAVE',
+		title: 'Hola, soy [Nombre].',
+		portraitCaption: 'Sesión de fotos pendiente',
+		text: 'Monitora de surf y facilitadora de breathwork, meditación y coaching. Aquí irá su historia: cómo el mar le enseñó a respirar y por qué creó Your Wave.',
+		note: 'CONTENIDO PENDIENTE',
+		cta: 'Conocer mi historia →',
+	},
+	courses: {
+		eyebrow: 'CURSOS YOUR WAVE',
+		title: 'Aprende. Explora. Hazlo tuyo.',
+		viewAll: 'Ver todos los cursos →',
+		intro: 'Programas con objetivos y temarios claros para seguir profundizando en tu práctica.',
+		cards: [
+			{
+				badgeSample: 'Ejemplo',
+				title: 'Explorar la respiración',
+				text: 'Conocer la respiración como práctica de atención.',
+				meta: 'Observación · Ritmo · Práctica guiada',
+				price: 'Formato, duración y precio · por confirmar',
+				cta: 'Ver programa →',
+			},
+			{
+				badgeSample: 'Ejemplo',
+				title: 'Iniciación a la meditación',
+				text: 'Distintas formas de prestar atención y crear una rutina.',
+				meta: 'Atención · Presencia · Rutina personal',
+				price: 'Formato, duración y precio · por confirmar',
+				cta: 'Ver programa →',
+			},
+			{
+				badgeSample: 'Ejemplo',
+				title: 'Un camino hacia ti',
+				text: 'Un espacio de reflexión y aprendizaje personal.',
+				meta: 'Escucha · Reflexión · Integración',
+				price: 'Formato, duración y precio · por confirmar',
+				cta: 'Ver programa →',
+			},
+		],
+	},
+	community: {
+		eyebrow: 'COMUNIDAD · LA TRIBU',
+		title: 'Tu camino también puede ser compartido.',
+		text: 'Un espacio para la tribu Your Wave: seguir aprendiendo, compartir lo vivido y encontrar nuevas formas de conectar.',
+		points: [
+			{ title: 'Recursos', text: 'Prácticas y audios para acompañar tu día.' },
+			{ title: 'Parte de olas', text: 'Novedades y próximas sesiones, en tu correo.' },
+			{ title: 'Encuentros', text: 'Quedadas en la playa para practicar juntos.' },
+		],
+		meta: 'Acceso y encuentros · por confirmar',
+		cta: 'Únete a la tribu',
+		pendingNote: 'Enlace a la comunidad de WhatsApp · pendiente',
+		imageCaption: 'Imagen de referencia · no representa a miembros reales',
+	},
+	testimonials: {
+		eyebrow: 'EXPERIENCIAS COMPARTIDAS',
+		title: 'Después de la ola.',
+		items: [
+			{
+				quote: 'Testimonio real de una participante sobre cómo se sintió después de la sesión.',
+				name: 'Nombre real',
+				detail: 'Sesión 1 a 1 · pendiente',
+			},
+			{
+				quote: 'Testimonio real sobre una experiencia Cometa o Surf & Breath.',
+				name: 'Nombre real',
+				detail: 'Cometa · pendiente',
+			},
+			{
+				quote: 'Testimonio real de alguien que ha hecho uno de los cursos.',
+				name: 'Nombre real',
+				detail: 'Curso · pendiente',
+			},
+		],
+		note: 'Solo voces reales, con nombre, foto y consentimiento.',
+	},
+	faq: {
+		eyebrow: 'ANTES DE EMPEZAR',
+		title: 'Un poco más de claridad.',
+		intro: 'Las preguntas que suelen surgir antes de reservar.',
+		items: [
+			{
+				question: '¿Por dónde puedo empezar?',
+				answer:
+					'Con una sesión 1 a 1, una práctica en grupo o un curso. Si dudas, escríbenos y te ayudamos a elegir. Canal de contacto: WhatsApp.',
+			},
+			{ question: '¿Necesito experiencia previa o saber surfear?', answer: 'Contenido pendiente de redacción.' },
+			{ question: '¿Qué son las experiencias Cometas?', answer: 'Contenido pendiente de redacción.' },
+			{ question: '¿Cómo reservo y puedo cambiar la fecha?', answer: 'Contenido pendiente de redacción.' },
+			{ question: '¿Dónde se realizan y cuánto cuestan?', answer: 'Contenido pendiente de redacción.' },
+		],
+		firstAnswerPrefix: 'Con una sesión 1 a 1, una práctica en grupo o un curso. Si dudas, ',
+		firstAnswerLink: 'escríbenos',
+		firstAnswerSuffix: ' y te ayudamos a elegir. Canal de contacto: WhatsApp.',
+	},
+	finalCta: {
+		eyebrow: 'TU SIGUIENTE PASO',
+		title: 'Tu próxima ola empieza con una respiración.',
+		text: 'Elige tu sesión. Consulta disponibilidad. Confirma tu plaza.',
+		ctaPrimary: 'Reserva tu sesión',
+		ctaSecondary: 'Ver cursos',
+		note: 'Agenda y condiciones de reserva · por confirmar',
+	},
+	footer: {
+		taglinePre: 'Encuentra ',
+		scriptWord: 'tu ola',
+		small: 'Breathwork, meditación y coaching junto al mar.',
+		exploreLabel: 'Explorar',
+		explore: [
+			{ label: 'Sesiones 1 a 1', href: '#sesiones' },
+			{ label: 'Sesiones grupales', href: '#sesiones' },
+			{ label: 'Cometas', href: '#cometas' },
+			{ label: 'Surf & Breath', href: '#surf-breath' },
+			{ label: 'Cursos Your Wave', href: '#cursos' },
+		],
+		brandLabel: 'Your Wave',
+		sobreMi: 'Sobre mí',
+		comunidad: 'Comunidad',
+		faqLabel: 'Preguntas frecuentes',
+		contacto: 'Contacto',
+		talkLabel: 'Hablemos',
+		emailPending: 'Correo · por confirmar',
+		whatsappLabel: 'WhatsApp',
+		instagramPending: 'Instagram · por confirmar',
+		copyright: '© 2026 Your Wave',
+		privacy: 'Privacidad',
+		terms: 'Términos',
+		notice: 'Aviso legal',
+		cookies: 'Cookies',
+	},
+};
+```
+
+- [ ] **Step 3: Verify the build succeeds**
+
+```bash
+npm run build
+```
+
+Expected: completes with no errors (neither file is imported by a page
+yet, so this just confirms both compile as valid TypeScript matching the
+`HomeContent` interface under `tsconfig.json`'s `astro/tsconfigs/strict`).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/content/home/types.ts src/content/home/es.ts
+git commit -m "Add HomeContent type and Spanish content dictionary"
+```
+
+---
+
+## Task 6: English content dictionary
+
+**Files:**
+- Create: `src/content/home/en.ts`
+
+**Interfaces:**
+- Consumes: `HomeContent` from `src/content/home/types.ts` (Task 5).
+- Produces: `export const en: HomeContent`, consumed by `src/pages/en/index.astro` (Task 10).
+
+- [ ] **Step 1: Write `src/content/home/en.ts`**
+
+This is a direct translation of `es.ts` — same structure, same meaning,
+same placeholder markers, same voice (direct, calm, no exclamation marks).
+Brand/product names that are proper nouns stay untranslated: "Your Wave",
+"World Awaken Vision Experience", "Cometas", "Surf & Breath".
+
+```ts
+import type { HomeContent } from './types';
+
+export const en: HomeContent = {
+	meta: {
+		title: 'Your Wave — Breathwork, meditation and coaching by the sea',
+		description:
+			'Breathwork, meditation and coaching sessions — one to one, in a group and on the beach — guided by a surf instructor. Book via WhatsApp.',
+	},
+	nav: {
+		sesiones: 'Sessions',
+		cometas: 'Cometas',
+		cursos: 'Courses',
+		comunidad: 'Community',
+		sobreMi: 'About me',
+		reserve: 'Book your session',
+		switchLabel: 'ES',
+	},
+	whatsapp: {
+		reserve: "Hi, I'd like to book a session at Your Wave.",
+		reserve1a1: "Hi, I'd like to book a 1-to-1 session.",
+		faqHelp: "Hi, I have some questions about getting started at Your Wave.",
+		footerInfo: "Hi, I'd like more information about Your Wave.",
+		footerContact: "Hi, I'd like to get in touch with Your Wave.",
+	},
+	badges: {
+		breathwork: 'Breathwork',
+		meditacion: 'Meditation',
+		coaching: 'Coaching · Hypnotherapy',
+		surf: 'Surf',
+		sample: 'Sample',
+	},
+	hero: {
+		eyebrow: 'BREATHWORK · MEDITATION · COACHING',
+		h1: 'Breathe, let go and return to your centre.',
+		subtitle:
+			'Breathwork, meditation and coaching sessions to slow down and listen to yourself. One to one, in a group, on the beach, or at your own pace. Like the sea: one wave at a time.',
+		ctaPrimary: 'Book your session',
+		ctaSecondary: 'View courses',
+		trust: '1-to-1 Sessions · Group sessions · Surf & Breath · Courses',
+		imageCaption: 'Reference image · to be replaced with real photography',
+		scriptPre: 'Find ',
+		scriptWord: 'your wave',
+		scriptPost: '',
+	},
+	social: {
+		eyebrow: 'TRUST WE’RE BUILDING',
+		stat1Value: '+000',
+		stat1Label: 'people supported · real figure pending',
+		stat2Value: '0.0 ★',
+		stat2Label: 'Google rating · pending',
+		quote: 'A real quote from a participant will go here, with their name and permission.',
+		quoteNote: 'Short testimonial · content pending',
+	},
+	benefits: [
+		{ title: 'Time to listen to yourself', text: 'A space to notice how you feel, with no pressure.' },
+		{
+			title: 'Your own pace',
+			text: 'Choose the format that matches your moment: like choosing which wave to catch.',
+		},
+		{
+			title: 'Shared learning',
+			text: 'Tools and practices to keep going, with others or on your own.',
+		},
+	],
+	sessions: {
+		eyebrow: 'FOUR WAYS TO START',
+		title: 'Find your wave.',
+		intro: "You don't need to have it all figured out. Choose a first experience that makes sense for you.",
+		cards: [
+			{
+				title: '1-to-1 Sessions',
+				description: 'Personalised support, focused on what you want to explore.',
+				meta: 'By appointment, subject to availability',
+				actionLabel: 'Book my session →',
+			},
+			{
+				title: 'Group sessions',
+				description: 'Share the practice. One discipline, or an experience that combines them all.',
+				meta: 'Disciplines and Cometas',
+				actionLabel: 'Explore sessions →',
+			},
+			{
+				title: 'Your Wave Courses',
+				description: 'Programmes with clear goals to keep deepening your practice, step by step.',
+				meta: 'Syllabus, goals and enrolment',
+				actionLabel: 'View courses →',
+			},
+			{
+				title: 'Community',
+				description: 'A meeting point to share resources, news and experiences with the tribe.',
+				meta: 'Resources, events and connection',
+				actionLabel: 'Meet the tribe →',
+			},
+		],
+	},
+	cometas: {
+		eyebrow: 'GROUP · COMBINED EXPERIENCE',
+		titlePre: 'One practice. ',
+		scriptWord: 'Cometas',
+		titlePost: ' Many ways to live it.',
+		text: 'Immersive sessions that bring the three disciplines together in one experience: release through breath, find clarity through meditation, and leave with a clear intention.',
+		cta: 'Discover Cometas →',
+		steps: [
+			{ label: 'BREATH', value: 'Breathwork' },
+			{ label: 'ATTENTION', value: 'Meditation' },
+			{ label: 'PROCESS', value: 'Coaching · Hypnotherapy' },
+		],
+		note: 'Upcoming sessions and format · to be confirmed',
+	},
+	surfBreath: {
+		eyebrow: 'INTO THE SEA · NEW PROPOSAL',
+		title: 'Surf & Breath: breathe on the shore, catch your wave.',
+		subtitle:
+			'An experience only a surf instructor can guide: preparing the body with breath, then taking it into the water.',
+		imageCaption: 'Reference image · to be replaced with real photography',
+		steps: [
+			{ number: '01', title: 'On the sand.', text: 'Breathwork to activate and calm the body.' },
+			{ number: '02', title: 'In the water.', text: 'Guided wave bathing or surf introduction, at your level.' },
+			{ number: '03', title: 'After the wave.', text: 'Short meditation to integrate the experience.' },
+		],
+		note: 'TO BE CONFIRMED WITH YOUR WAVE',
+	},
+	mission: {
+		eyebrow: 'WHAT MOVES US',
+		title: 'More space to be. Less rush to arrive.',
+		text1:
+			"Your Wave was born to bring breath, attention and personal learning into everyday life. There's no single path, no one right way to live the experience.",
+		text2:
+			"The sea teaches us to read the moment, wait, paddle and let go. That's exactly what we work on in every session.",
+		values: ['Listening before demands', 'Clarity at every step', 'Respect for your own pace'],
+		imageCaption: 'Reference image · a pause by the sea',
+	},
+	founder: {
+		eyebrow: 'BEHIND YOUR WAVE',
+		title: "Hi, I'm [Name].",
+		portraitCaption: 'Photo shoot pending',
+		text: "Surf instructor and breathwork, meditation and coaching facilitator. Her story goes here: how the sea taught her to breathe, and why she created Your Wave.",
+		note: 'CONTENT PENDING',
+		cta: 'Read my story →',
+	},
+	courses: {
+		eyebrow: 'YOUR WAVE COURSES',
+		title: 'Learn. Explore. Make it yours.',
+		viewAll: 'View all courses →',
+		intro: 'Programmes with clear goals and syllabuses to keep deepening your practice.',
+		cards: [
+			{
+				badgeSample: 'Sample',
+				title: 'Exploring the breath',
+				text: 'Getting to know breath as a practice of attention.',
+				meta: 'Observation · Pace · Guided practice',
+				price: 'Format, duration and price · to be confirmed',
+				cta: 'View programme →',
+			},
+			{
+				badgeSample: 'Sample',
+				title: 'Introduction to meditation',
+				text: 'Different ways of paying attention and building a routine.',
+				meta: 'Attention · Presence · Personal routine',
+				price: 'Format, duration and price · to be confirmed',
+				cta: 'View programme →',
+			},
+			{
+				badgeSample: 'Sample',
+				title: 'A path to yourself',
+				text: 'A space for reflection and personal learning.',
+				meta: 'Listening · Reflection · Integration',
+				price: 'Format, duration and price · to be confirmed',
+				cta: 'View programme →',
+			},
+		],
+	},
+	community: {
+		eyebrow: 'COMMUNITY · THE TRIBE',
+		title: 'Your path can be shared too.',
+		text: "A space for the Your Wave tribe: keep learning, share your experience and find new ways to connect.",
+		points: [
+			{ title: 'Resources', text: 'Practices and audio to accompany your day.' },
+			{ title: 'Wave report', text: 'News and upcoming sessions, sent your way.' },
+			{ title: 'Meetups', text: 'Beach get-togethers to practise together.' },
+		],
+		meta: 'Access and meetups · to be confirmed',
+		cta: 'Join the tribe',
+		pendingNote: 'WhatsApp community link · pending',
+		imageCaption: 'Reference image · does not represent real members',
+	},
+	testimonials: {
+		eyebrow: 'SHARED EXPERIENCES',
+		title: 'After the wave.',
+		items: [
+			{
+				quote: 'A real quote from a participant about how they felt after the session.',
+				name: 'Real name',
+				detail: '1-to-1 session · pending',
+			},
+			{
+				quote: 'A real quote about a Cometa or Surf & Breath experience.',
+				name: 'Real name',
+				detail: 'Cometa · pending',
+			},
+			{
+				quote: "A real quote from someone who's taken one of the courses.",
+				name: 'Real name',
+				detail: 'Course · pending',
+			},
+		],
+		note: 'Real voices only, with name, photo and consent.',
+	},
+	faq: {
+		eyebrow: 'BEFORE YOU START',
+		title: 'A little more clarity.',
+		intro: 'The questions that usually come up before booking.',
+		items: [
+			{
+				question: 'Where can I start?',
+				answer:
+					"With a 1-to-1 session, a group practice or a course. If you're unsure, message us and we'll help you choose. Contact channel: WhatsApp.",
+			},
+			{ question: 'Do I need previous experience or know how to surf?', answer: 'Content pending.' },
+			{ question: 'What are the Cometas experiences?', answer: 'Content pending.' },
+			{ question: 'How do I book, and can I change the date?', answer: 'Content pending.' },
+			{ question: 'Where do sessions take place and how much do they cost?', answer: 'Content pending.' },
+		],
+		firstAnswerPrefix: "With a 1-to-1 session, a group practice or a course. If you're unsure, ",
+		firstAnswerLink: 'message us',
+		firstAnswerSuffix: " and we'll help you choose. Contact channel: WhatsApp.",
+	},
+	finalCta: {
+		eyebrow: 'YOUR NEXT STEP',
+		title: 'Your next wave starts with a breath.',
+		text: 'Choose your session. Check availability. Confirm your spot.',
+		ctaPrimary: 'Book your session',
+		ctaSecondary: 'View courses',
+		note: 'Booking schedule and conditions · to be confirmed',
+	},
+	footer: {
+		taglinePre: 'Find ',
+		scriptWord: 'your wave',
+		small: 'Breathwork, meditation and coaching by the sea.',
+		exploreLabel: 'Explore',
+		explore: [
+			{ label: '1-to-1 Sessions', href: '#sesiones' },
+			{ label: 'Group sessions', href: '#sesiones' },
+			{ label: 'Cometas', href: '#cometas' },
+			{ label: 'Surf & Breath', href: '#surf-breath' },
+			{ label: 'Your Wave Courses', href: '#cursos' },
+		],
+		brandLabel: 'Your Wave',
+		sobreMi: 'About me',
+		comunidad: 'Community',
+		faqLabel: 'FAQ',
+		contacto: 'Contact',
+		talkLabel: "Let's talk",
+		emailPending: 'Email · to be confirmed',
+		whatsappLabel: 'WhatsApp',
+		instagramPending: 'Instagram · to be confirmed',
+		copyright: '© 2026 Your Wave',
+		privacy: 'Privacy',
+		terms: 'Terms',
+		notice: 'Legal notice',
+		cookies: 'Cookies',
+	},
+};
+```
+
+- [ ] **Step 2: Verify the build succeeds**
+
+```bash
+npm run build
+```
+
+Expected: completes with no errors. This is the Review Focus check for
+content drift: if `en.ts` were missing a field, or had a field of the wrong
+shape (e.g. a string where `cometas.steps` expects an array of objects),
+TypeScript's structural check against `HomeContent` fails and `astro build`
+reports the error with the exact missing/mismatched field.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/content/home/en.ts
+git commit -m "Add English content dictionary"
+```
+
+---
+
+## Task 7: HomePage.astro — Header, Hero, Prueba social, Beneficios, Encuentra tu ola, Cometas
+
+**Files:**
+- Create: `src/components/HomePage.astro`
+
+**Interfaces:**
+- Consumes: `Button`, `Badge`, `SessionCard`, `WaveDivider` (Tasks 3-4),
+  `whatsappLink` (Task 1), `HomeContent` type (Task 5), `getRelativeLocaleUrl`
+  from `astro:i18n`.
+- Produces: `HomePage` component — props `lang: 'es' | 'en'`, `content:
+  HomeContent`. Consumed by `src/pages/index.astro` and
+  `src/pages/en/index.astro` in Task 10.
+
+- [ ] **Step 1: Write the component shell, header, hero and prueba social**
 
 ```astro
 ---
 import Layout from '../layouts/Layout.astro';
-import Button from '../components/Button.astro';
-import WaveDivider from '../components/WaveDivider.astro';
+import Button from './Button.astro';
+import Badge from './Badge.astro';
+import SessionCard from './SessionCard.astro';
+import WaveDivider from './WaveDivider.astro';
 import { whatsappLink } from '../config/contact';
+import type { HomeContent } from '../content/home/types';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+export interface Props {
+	lang: 'es' | 'en';
+	content: HomeContent;
+}
+
+const { lang, content: c } = Astro.props;
+const otherLocale = lang === 'es' ? 'en' : 'es';
+const switchHref = getRelativeLocaleUrl(otherLocale, '/');
+
+const sessionHrefs = [whatsappLink(c.whatsapp.reserve1a1), '#cometas', '#cursos', '#comunidad'];
 ---
 
-<Layout
-	title="Your Wave — Breathwork, meditación y coaching junto al mar"
-	description="Sesiones de breathwork, meditación y coaching, individuales, grupales y en la playa, guiadas por una monitora de surf. Reserva por WhatsApp."
->
+<Layout title={c.meta.title} description={c.meta.description} lang={lang} extraGraph={[]}>
 	<header id="top" class="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur">
 		<div class="mx-auto flex w-full max-w-[1200px] items-center justify-between gap-4 px-4 py-4 md:px-6">
 			<a href="#top" class="shrink-0">
 				<img src="/logos/yourwave-logotipo.svg" alt="Your Wave" class="h-10 w-auto md:h-12" />
 			</a>
-			<Button href={whatsappLink('Hola, quiero reservar una sesión en Your Wave.')} class="shrink-0">
-				Reserva tu sesión
-			</Button>
+			<div class="flex items-center gap-3">
+				<a
+					href={switchHref}
+					class="yw-small shrink-0 rounded-pill border border-line px-3 py-1 text-ink hover:border-ink"
+					hreflang={otherLocale}
+				>
+					{c.nav.switchLabel}
+				</a>
+				<Button href={whatsappLink(c.whatsapp.reserve)} class="shrink-0">{c.nav.reserve}</Button>
+			</div>
 		</div>
 		<nav
 			class="mx-auto flex w-full max-w-[1200px] gap-6 overflow-x-auto px-4 pb-3 md:justify-center md:px-6"
 			aria-label="Principal"
 		>
-			<a class="yw-body whitespace-nowrap text-ink hover:text-link" href="#sesiones">Sesiones</a>
-			<a class="yw-body whitespace-nowrap text-ink hover:text-link" href="#cometas">Cometas</a>
-			<a class="yw-body whitespace-nowrap text-ink hover:text-link" href="#cursos">Cursos</a>
-			<a class="yw-body whitespace-nowrap text-ink hover:text-link" href="#comunidad">Comunidad</a>
-			<a class="yw-body whitespace-nowrap text-ink hover:text-link" href="#sobre-mi">Sobre mí</a>
+			<a class="yw-body whitespace-nowrap text-ink hover:text-link" href="#sesiones">{c.nav.sesiones}</a>
+			<a class="yw-body whitespace-nowrap text-ink hover:text-link" href="#cometas">{c.nav.cometas}</a>
+			<a class="yw-body whitespace-nowrap text-ink hover:text-link" href="#cursos">{c.nav.cursos}</a>
+			<a class="yw-body whitespace-nowrap text-ink hover:text-link" href="#comunidad">{c.nav.comunidad}</a>
+			<a class="yw-body whitespace-nowrap text-ink hover:text-link" href="#sobre-mi">{c.nav.sobreMi}</a>
 		</nav>
 	</header>
 
@@ -654,32 +1486,27 @@ import { whatsappLink } from '../config/contact';
 		<section class="bg-surface">
 			<div class="mx-auto grid w-full max-w-[1200px] gap-8 px-4 py-12 md:grid-cols-2 md:items-center md:gap-12 md:px-6 md:py-24">
 				<div>
-					<p class="yw-eyebrow text-ink-muted">BREATHWORK · MEDITACIÓN · COACHING</p>
-					<h1 class="yw-display-xl mt-4 text-ink">Respira, suelta y vuelve a tu centro.</h1>
-					<p class="yw-body-lg mt-6 max-w-[48ch] text-ink-muted">
-						Sesiones de breathwork, meditación y coaching para bajar el ritmo y escucharte. En individual, en grupo,
-						en la playa o aprendiendo a tu ritmo. Como en el agua: una ola cada vez.
-					</p>
+					<p class="yw-eyebrow text-ink-muted">{c.hero.eyebrow}</p>
+					<h1 class="yw-display-xl mt-4 text-ink">{c.hero.h1}</h1>
+					<p class="yw-body-lg mt-6 max-w-[48ch] text-ink-muted">{c.hero.subtitle}</p>
 					<div class="mt-8 flex flex-wrap gap-4">
-						<Button size="lg" href={whatsappLink('Hola, quiero reservar una sesión en Your Wave.')}>
-							Reserva tu sesión
-						</Button>
-						<Button variant="secondary" size="lg" href="#cursos">Ver cursos</Button>
+						<Button size="lg" href={whatsappLink(c.whatsapp.reserve)}>{c.hero.ctaPrimary}</Button>
+						<Button variant="secondary" size="lg" href="#cursos">{c.hero.ctaSecondary}</Button>
 					</div>
-					<p class="yw-small mt-6 text-ink-muted">Sesiones 1 a 1 · Grupales · Surf &amp; Breath · Cursos</p>
+					<p class="yw-small mt-6 text-ink-muted">{c.hero.trust}</p>
 				</div>
 				<div class="relative">
 					<div
 						class="flex aspect-[4/3] items-center justify-center rounded-lg border border-dashed border-line bg-sand p-6 text-center"
 						role="img"
-						aria-label="Imagen de referencia: mar en calma, pendiente de sustituir por fotografía real"
+						aria-label={c.hero.imageCaption}
 					>
-						<p class="yw-small text-ink-muted">Imagen de referencia · sustituir por fotografía</p>
+						<p class="yw-small text-ink-muted">{c.hero.imageCaption}</p>
 					</div>
 					<p
 						class="yw-body mt-4 text-center text-ink-muted md:absolute md:-bottom-6 md:left-6 md:mt-0 md:bg-surface md:px-3"
 					>
-						Encuentra <span class="yw-script text-wave-ocean">tu ola</span> propia
+						{c.hero.scriptPre}<span class="yw-script text-wave-ocean">{c.hero.scriptWord}</span>{c.hero.scriptPost}
 					</p>
 				</div>
 			</div>
@@ -689,130 +1516,66 @@ import { whatsappLink } from '../config/contact';
 
 		<section class="bg-sand">
 			<div class="mx-auto w-full max-w-[1200px] px-4 py-12 md:px-6 md:py-24">
-				<p class="yw-eyebrow text-ink-muted">CONFIANZA QUE SE CONSTRUYE</p>
+				<p class="yw-eyebrow text-ink-muted">{c.social.eyebrow}</p>
 				<div class="mt-6 flex flex-wrap items-start gap-10">
 					<div class="flex flex-wrap gap-10">
 						<div>
-							<p class="yw-heading-1 text-ink">+000</p>
-							<p class="yw-small text-ink-muted">personas acompañadas · dato real pendiente</p>
+							<p class="yw-heading-1 text-ink">{c.social.stat1Value}</p>
+							<p class="yw-small text-ink-muted">{c.social.stat1Label}</p>
 						</div>
 						<div>
-							<p class="yw-heading-1 text-ink">0,0 ★</p>
-							<p class="yw-small text-ink-muted">valoración en Google · pendiente</p>
+							<p class="yw-heading-1 text-ink">{c.social.stat2Value}</p>
+							<p class="yw-small text-ink-muted">{c.social.stat2Label}</p>
 						</div>
 					</div>
 					<div class="max-w-[48ch]">
-						<p class="yw-quote-text text-ink" style="margin:0;">
-							&ldquo;Aquí irá una frase real de una participante, con su nombre y permiso.&rdquo;
-						</p>
-						<p class="yw-small mt-2 text-ink-muted">Testimonio breve · contenido pendiente</p>
+						<p class="yw-quote-text text-ink" style="margin:0;">&ldquo;{c.social.quote}&rdquo;</p>
+						<p class="yw-small mt-2 text-ink-muted">{c.social.quoteNote}</p>
 					</div>
 				</div>
 			</div>
 		</section>
-	</main>
-</Layout>
 ```
 
-- [ ] **Step 2: Verify the build succeeds**
+Leave `extraGraph={[]}` for now — Task 9 replaces it with the real
+`FAQPage`/`Service` data once that section exists.
 
-```bash
-npm run build
-```
+- [ ] **Step 2: Add the beneficios, encuentra tu ola and cometas sections**
 
-Expected: completes with no errors.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add src/pages/index.astro
-git commit -m "Build home page shell: header, hero, prueba social"
-```
-
----
-
-## Task 6: Beneficios, Encuentra tu ola, Cometas
-
-**Files:**
-- Modify: `src/pages/index.astro`
-
-**Interfaces:**
-- Consumes: `Badge`, `SessionCard` (new imports this task), plus everything from Task 5.
-
-- [ ] **Step 1: Add the three imports**
-
-At the top of `src/pages/index.astro`, below the existing imports, add:
-
-```astro
-import Badge from '../components/Badge.astro';
-import SessionCard from '../components/SessionCard.astro';
-```
-
-- [ ] **Step 2: Insert the three sections right before `</main>`**
+Insert immediately before `</main>` (there is no `</main>` yet in this file
+— add it now as part of this step, since Task 8 will insert more content
+before it):
 
 ```astro
 		<section class="bg-surface">
 			<div class="mx-auto w-full max-w-[1200px] px-4 py-12 md:px-6 md:py-24">
 				<div class="grid gap-8 md:grid-cols-3">
-					<div>
-						<span class="yw-ray" aria-hidden="true"></span>
-						<h3 class="yw-heading-3 mt-3 text-ink">Tiempo para escucharte</h3>
-						<p class="yw-body mt-2 text-ink-muted">Un espacio para observar cómo te sientes, sin exigencias.</p>
-					</div>
-					<div>
-						<span class="yw-ray" aria-hidden="true"></span>
-						<h3 class="yw-heading-3 mt-3 text-ink">Tu propio ritmo</h3>
-						<p class="yw-body mt-2 text-ink-muted">
-							Elige el formato que encaja con tu momento: como elegir la ola que quieres coger.
-						</p>
-					</div>
-					<div>
-						<span class="yw-ray" aria-hidden="true"></span>
-						<h3 class="yw-heading-3 mt-3 text-ink">Aprendizaje compartido</h3>
-						<p class="yw-body mt-2 text-ink-muted">
-							Herramientas y prácticas para seguir, en compañía o por tu cuenta.
-						</p>
-					</div>
+					{c.benefits.map((b) => (
+						<div>
+							<span class="yw-ray" aria-hidden="true"></span>
+							<h3 class="yw-heading-3 mt-3 text-ink">{b.title}</h3>
+							<p class="yw-body mt-2 text-ink-muted">{b.text}</p>
+						</div>
+					))}
 				</div>
 			</div>
 		</section>
 
 		<section id="sesiones" class="bg-surface">
 			<div class="mx-auto w-full max-w-[1200px] px-4 py-12 md:px-6 md:py-24">
-				<p class="yw-eyebrow text-ink-muted">CUATRO FORMAS DE EMPEZAR</p>
-				<h2 class="yw-heading-2 mt-4 text-ink">Encuentra tu ola.</h2>
-				<p class="yw-body mt-2 max-w-[60ch] text-ink-muted">
-					No necesitas tenerlo todo claro. Elige una primera experiencia que tenga sentido para ti.
-				</p>
+				<p class="yw-eyebrow text-ink-muted">{c.sessions.eyebrow}</p>
+				<h2 class="yw-heading-2 mt-4 text-ink">{c.sessions.title}</h2>
+				<p class="yw-body mt-2 max-w-[60ch] text-ink-muted">{c.sessions.intro}</p>
 				<div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-					<SessionCard
-						title="Sesiones 1 a 1"
-						description="Acompañamiento personalizado y atención a lo que quieres explorar."
-						meta="Cita según disponibilidad"
-						actionLabel="Reservar mi cita →"
-						href={whatsappLink('Hola, quiero reservar una sesión 1 a 1.')}
-					/>
-					<SessionCard
-						title="Sesiones grupales"
-						description="Comparte la práctica. Una disciplina o una experiencia que lo combine todo."
-						meta="Disciplinas y Cometas"
-						actionLabel="Explorar sesiones →"
-						href="#cometas"
-					/>
-					<SessionCard
-						title="Cursos Your Wave"
-						description="Programas con objetivos claros para dar continuidad a tu práctica, paso a paso."
-						meta="Temario, objetivos e inscripción"
-						actionLabel="Ver los cursos →"
-						href="#cursos"
-					/>
-					<SessionCard
-						title="Comunidad"
-						description="Un punto de encuentro para compartir recursos, novedades y experiencias con la tribu."
-						meta="Recursos, eventos y conexión"
-						actionLabel="Conocer la tribu →"
-						href="#comunidad"
-					/>
+					{c.sessions.cards.map((card, i) => (
+						<SessionCard
+							title={card.title}
+							description={card.description}
+							meta={card.meta}
+							actionLabel={card.actionLabel}
+							href={sessionHrefs[i]}
+						/>
+					))}
 				</div>
 			</div>
 		</section>
@@ -822,46 +1585,36 @@ import SessionCard from '../components/SessionCard.astro';
 				class="mx-auto grid w-full max-w-[1200px] gap-8 px-4 py-12 md:grid-cols-2 md:items-center md:gap-12 md:px-6 md:py-24"
 			>
 				<div>
-					<p class="yw-eyebrow text-ink-muted">EN GRUPO · EXPERIENCIA COMBINADA</p>
+					<p class="yw-eyebrow text-ink-muted">{c.cometas.eyebrow}</p>
 					<h2 class="yw-heading-2 mt-4 text-ink">
-						Una práctica. <span class="yw-script text-wave-ocean">Cometas</span> Muchas formas de vivirla.
+						{c.cometas.titlePre}<span class="yw-script text-wave-ocean">{c.cometas.scriptWord}</span>{c.cometas.titlePost}
 					</h2>
 					<div class="mt-4 flex flex-wrap gap-2">
-						<Badge tone="breathwork" />
-						<Badge tone="meditacion" />
-						<Badge tone="coaching" />
+						<Badge tone="breathwork">{c.badges.breathwork}</Badge>
+						<Badge tone="meditacion">{c.badges.meditacion}</Badge>
+						<Badge tone="coaching">{c.badges.coaching}</Badge>
 					</div>
-					<p class="yw-body mt-4 text-ink-muted">
-						Sesiones inmersivas que unen las tres disciplinas en una sola experiencia: soltar con la respiración,
-						ordenar con la meditación y salir con un propósito claro.
-					</p>
+					<p class="yw-body mt-4 text-ink-muted">{c.cometas.text}</p>
 					<div class="mt-6">
-						<Button variant="ghost" href="#sesiones">Descubrir Cometas →</Button>
+						<Button variant="ghost" href="#sesiones">{c.cometas.cta}</Button>
 					</div>
 				</div>
 				<div class="rounded-lg bg-wave-indigo p-8 text-on-deep">
 					<ul class="grid gap-4">
-						<li>
-							<p class="yw-eyebrow text-on-deep opacity-80">RESPIRACIÓN</p>
-							<p class="yw-heading-3 mt-1 text-on-deep">Breathwork</p>
-						</li>
-						<li>
-							<p class="yw-eyebrow text-on-deep opacity-80">ATENCIÓN</p>
-							<p class="yw-heading-3 mt-1 text-on-deep">Meditación</p>
-						</li>
-						<li>
-							<p class="yw-eyebrow text-on-deep opacity-80">PROCESO</p>
-							<p class="yw-heading-3 mt-1 text-on-deep">Coaching · Hipnoterapia</p>
-						</li>
+						{c.cometas.steps.map((step) => (
+							<li>
+								<p class="yw-eyebrow text-on-deep opacity-80">{step.label}</p>
+								<p class="yw-heading-3 mt-1 text-on-deep">{step.value}</p>
+							</li>
+						))}
 					</ul>
-					<p class="yw-small mt-6 text-on-deep opacity-80">Próximas sesiones y formato · por confirmar</p>
+					<p class="yw-small mt-6 text-on-deep opacity-80">{c.cometas.note}</p>
 				</div>
 			</div>
 		</section>
+	</main>
+</Layout>
 ```
-
-Insert this block immediately before the closing `</main>` tag (after the
-"Prueba social" `</section>` from Task 5).
 
 - [ ] **Step 3: Verify the build succeeds**
 
@@ -869,24 +1622,37 @@ Insert this block immediately before the closing `</main>` tag (after the
 npm run build
 ```
 
-Expected: completes with no errors. The four `SessionCard`s render in a
-4-column grid on large screens, 2-column on tablet, 1-column on mobile.
+Expected: `HomePage.astro` compiles with no errors. It isn't imported by
+any page yet, so this only confirms the file itself is valid Astro/TS —
+full rendering is verified once Task 10 wires up the page files.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/pages/index.astro
-git commit -m "Add beneficios, encuentra tu ola and cometas sections"
+git add src/components/HomePage.astro
+git commit -m "Add HomePage component: header, hero, prueba social, beneficios, sesiones, cometas"
 ```
 
 ---
 
-## Task 7: Surf & Breath, Misión, Fundadora
+## Task 8: HomePage.astro — Surf & Breath, Misión, Fundadora, Cursos, Comunidad, Testimonios
 
 **Files:**
-- Modify: `src/pages/index.astro`
+- Modify: `src/components/HomePage.astro`
 
-- [ ] **Step 1: Insert the three sections before `</main>`**
+**Interfaces:**
+- Consumes: `Testimonial` (new import this task), plus everything from Task 7.
+
+- [ ] **Step 1: Add the import**
+
+```astro
+import Testimonial from './Testimonial.astro';
+```
+
+- [ ] **Step 2: Insert the six sections**
+
+Remove the `</main>\n</Layout>` lines left by Task 7, insert this block, then
+restore `</main>\n</Layout>` after it:
 
 ```astro
 		<section id="surf-breath" class="bg-surface">
@@ -896,44 +1662,29 @@ git commit -m "Add beneficios, encuentra tu ola and cometas sections"
 				<div
 					class="order-2 flex aspect-[4/3] items-center justify-center rounded-lg border border-dashed border-line bg-sand p-6 text-center md:order-1"
 					role="img"
-					aria-label="Imagen de referencia: breathwork en la orilla junto al mar, pendiente de sustituir por fotografía real"
+					aria-label={c.surfBreath.imageCaption}
 				>
-					<p class="yw-small text-ink-muted">Imagen de referencia · sustituir por fotografía</p>
+					<p class="yw-small text-ink-muted">{c.surfBreath.imageCaption}</p>
 				</div>
 				<div class="order-1 md:order-2">
-					<p class="yw-eyebrow text-ink-muted">MAR ADENTRO · NUEVA PROPUESTA</p>
-					<h2 class="yw-heading-2 mt-4 text-ink">Surf &amp; Breath: respira en la orilla, coge tu ola.</h2>
-					<p class="yw-body mt-4 text-ink-muted">
-						Una experiencia que solo puede guiar una monitora de surf: preparar el cuerpo con la respiración y
-						llevarla al agua.
-					</p>
+					<p class="yw-eyebrow text-ink-muted">{c.surfBreath.eyebrow}</p>
+					<h2 class="yw-heading-2 mt-4 text-ink">{c.surfBreath.title}</h2>
+					<p class="yw-body mt-4 text-ink-muted">{c.surfBreath.subtitle}</p>
 					<ol class="mt-6 grid gap-4">
-						<li class="flex gap-4">
-							<span class="yw-heading-3 text-wave-ocean">01</span>
-							<div>
-								<p class="yw-heading-3 text-ink">En la arena.</p>
-								<p class="yw-body text-ink-muted">Breathwork para activar y calmar el cuerpo.</p>
-							</div>
-						</li>
-						<li class="flex gap-4">
-							<span class="yw-heading-3 text-wave-ocean">02</span>
-							<div>
-								<p class="yw-heading-3 text-ink">En el agua.</p>
-								<p class="yw-body text-ink-muted">Baño de olas guiado o iniciación al surf, a tu nivel.</p>
-							</div>
-						</li>
-						<li class="flex gap-4">
-							<span class="yw-heading-3 text-wave-ocean">03</span>
-							<div>
-								<p class="yw-heading-3 text-ink">Después de la ola.</p>
-								<p class="yw-body text-ink-muted">Meditación breve para integrar lo vivido.</p>
-							</div>
-						</li>
+						{c.surfBreath.steps.map((step) => (
+							<li class="flex gap-4">
+								<span class="yw-heading-3 text-wave-ocean">{step.number}</span>
+								<div>
+									<p class="yw-heading-3 text-ink">{step.title}</p>
+									<p class="yw-body text-ink-muted">{step.text}</p>
+								</div>
+							</li>
+						))}
 					</ol>
 					<div class="mt-6 flex flex-wrap items-center gap-3">
-						<Badge tone="surf" />
-						<Badge tone="breathwork" />
-						<span class="yw-small text-ink-muted">POR VALIDAR CON YOUR WAVE</span>
+						<Badge tone="surf">{c.badges.surf}</Badge>
+						<Badge tone="breathwork">{c.badges.breathwork}</Badge>
+						<span class="yw-small text-ink-muted">{c.surfBreath.note}</span>
 					</div>
 				</div>
 			</div>
@@ -946,27 +1697,20 @@ git commit -m "Add beneficios, encuentra tu ola and cometas sections"
 				class="mx-auto grid w-full max-w-[1200px] gap-8 px-4 py-12 md:grid-cols-2 md:items-center md:gap-12 md:px-6 md:py-24"
 			>
 				<div>
-					<p class="yw-eyebrow text-ink-muted">LO QUE NOS MUEVE</p>
-					<h2 class="yw-heading-2 mt-4 text-ink">Más espacio para ser. Menos prisa por llegar.</h2>
-					<p class="yw-body mt-4 text-ink-muted">
-						Your Wave nace para acercar la respiración, la atención y el aprendizaje personal a la vida
-						cotidiana. Sin un único camino ni una forma correcta de vivir la experiencia.
-					</p>
-					<p class="yw-body mt-4 text-ink-muted">
-						El mar enseña a leer el momento, esperar, remar y soltar. Eso mismo trabajamos en cada sesión.
-					</p>
+					<p class="yw-eyebrow text-ink-muted">{c.mission.eyebrow}</p>
+					<h2 class="yw-heading-2 mt-4 text-ink">{c.mission.title}</h2>
+					<p class="yw-body mt-4 text-ink-muted">{c.mission.text1}</p>
+					<p class="yw-body mt-4 text-ink-muted">{c.mission.text2}</p>
 					<ul class="yw-rays mt-6">
-						<li>Escucha antes que exigencia</li>
-						<li>Claridad en cada paso</li>
-						<li>Respeto por tu propio ritmo</li>
+						{c.mission.values.map((v) => <li>{v}</li>)}
 					</ul>
 				</div>
 				<div
 					class="flex aspect-[4/3] items-center justify-center rounded-lg border border-dashed border-line bg-surface p-6 text-center"
 					role="img"
-					aria-label="Imagen de referencia: una pausa junto al mar, pendiente de sustituir por fotografía real"
+					aria-label={c.mission.imageCaption}
 				>
-					<p class="yw-small text-ink-muted">Imagen de referencia · una pausa junto al mar</p>
+					<p class="yw-small text-ink-muted">{c.mission.imageCaption}</p>
 				</div>
 			</div>
 
@@ -977,121 +1721,53 @@ git commit -m "Add beneficios, encuentra tu ola and cometas sections"
 				<div
 					class="flex aspect-[4/5] items-center justify-center rounded-lg border border-dashed border-line bg-surface p-6 text-center"
 					role="img"
-					aria-label="Retrato de la fundadora en el agua o en la orilla, sesión de fotos pendiente"
+					aria-label={c.founder.portraitCaption}
 				>
-					<p class="yw-small text-ink-muted">Sesión de fotos pendiente</p>
+					<p class="yw-small text-ink-muted">{c.founder.portraitCaption}</p>
 				</div>
 				<div>
-					<p class="yw-eyebrow text-ink-muted">DETRÁS DE YOUR WAVE</p>
-					<h2 class="yw-heading-2 mt-4 text-ink">Hola, soy [Nombre].</h2>
-					<p class="yw-body mt-4 text-ink-muted">
-						Monitora de surf y facilitadora de breathwork, meditación y coaching. Aquí irá su historia: cómo el
-						mar le enseñó a respirar y por qué creó Your Wave.
-					</p>
-					<p class="yw-small mt-2 text-ink-muted">CONTENIDO PENDIENTE</p>
+					<p class="yw-eyebrow text-ink-muted">{c.founder.eyebrow}</p>
+					<h2 class="yw-heading-2 mt-4 text-ink">{c.founder.title}</h2>
+					<p class="yw-body mt-4 text-ink-muted">{c.founder.text}</p>
+					<p class="yw-small mt-2 text-ink-muted">{c.founder.note}</p>
 					<div class="mt-6">
-						<Button variant="ghost" href="#sobre-mi">Conocer mi historia →</Button>
+						<Button variant="ghost" href="#sobre-mi">{c.founder.cta}</Button>
 					</div>
 				</div>
 			</div>
 		</section>
-```
 
-Insert immediately before `</main>` (after the "Cometas" `</section>` from
-Task 6).
-
-- [ ] **Step 2: Verify the build succeeds**
-
-```bash
-npm run build
-```
-
-Expected: completes with no errors.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add src/pages/index.astro
-git commit -m "Add surf & breath, misión and fundadora sections"
-```
-
----
-
-## Task 8: Cursos, Comunidad, Testimonios
-
-**Files:**
-- Modify: `src/pages/index.astro`
-
-**Interfaces:**
-- Consumes: `Testimonial` (new import this task), plus everything from Tasks 5-7.
-
-- [ ] **Step 1: Add the import**
-
-```astro
-import Testimonial from '../components/Testimonial.astro';
-```
-
-- [ ] **Step 2: Insert the three sections before `</main>`**
-
-```astro
 		<section id="cursos" class="bg-surface">
 			<div class="mx-auto w-full max-w-[1200px] px-4 py-12 md:px-6 md:py-24">
 				<div class="flex flex-wrap items-end justify-between gap-4">
 					<div>
-						<p class="yw-eyebrow text-ink-muted">CURSOS YOUR WAVE</p>
-						<h2 class="yw-heading-2 mt-4 text-ink">Aprende. Explora. Hazlo tuyo.</h2>
-						<p class="yw-body mt-2 max-w-[60ch] text-ink-muted">
-							Programas con objetivos y temarios claros para seguir profundizando en tu práctica.
-						</p>
+						<p class="yw-eyebrow text-ink-muted">{c.courses.eyebrow}</p>
+						<h2 class="yw-heading-2 mt-4 text-ink">{c.courses.title}</h2>
+						<p class="yw-body mt-2 max-w-[60ch] text-ink-muted">{c.courses.intro}</p>
 					</div>
-					<Button variant="ghost" href="#cursos">Ver todos los cursos →</Button>
+					<Button variant="ghost" href="#cursos">{c.courses.viewAll}</Button>
 				</div>
 				<div class="mt-10 grid gap-6 md:grid-cols-3">
-					<article class="yw-card">
-						<div class="yw-card-body">
-							<div style="display:flex;flex-wrap:wrap;gap:var(--space-2);">
-								<Badge tone="breathwork" />
-								<Badge tone="neutral">Ejemplo</Badge>
-							</div>
-							<h3 class="yw-card-title">Explorar la respiración</h3>
-							<p class="yw-card-text">Conocer la respiración como práctica de atención.</p>
-							<p class="yw-card-meta">Observación · Ritmo · Práctica guiada</p>
-						</div>
-						<div class="yw-card-foot">
-							<span class="yw-small text-ink-muted">Formato, duración y precio · por confirmar</span>
-							<Button variant="ghost" href="#cursos">Ver programa →</Button>
-						</div>
-					</article>
-					<article class="yw-card">
-						<div class="yw-card-body">
-							<div style="display:flex;flex-wrap:wrap;gap:var(--space-2);">
-								<Badge tone="meditacion" />
-								<Badge tone="neutral">Ejemplo</Badge>
-							</div>
-							<h3 class="yw-card-title">Iniciación a la meditación</h3>
-							<p class="yw-card-text">Distintas formas de prestar atención y crear una rutina.</p>
-							<p class="yw-card-meta">Atención · Presencia · Rutina personal</p>
-						</div>
-						<div class="yw-card-foot">
-							<span class="yw-small text-ink-muted">Formato, duración y precio · por confirmar</span>
-							<Button variant="ghost" href="#cursos">Ver programa →</Button>
-						</div>
-					</article>
-					<article class="yw-card">
-						<div class="yw-card-body">
-							<div style="display:flex;flex-wrap:wrap;gap:var(--space-2);">
-								<Badge tone="coaching" />
-								<Badge tone="neutral">Ejemplo</Badge>
-							</div>
-							<h3 class="yw-card-title">Un camino hacia ti</h3>
-							<p class="yw-card-text">Un espacio de reflexión y aprendizaje personal.</p>
-							<p class="yw-card-meta">Escucha · Reflexión · Integración</p>
-						</div>
-						<div class="yw-card-foot">
-							<span class="yw-small text-ink-muted">Formato, duración y precio · por confirmar</span>
-							<Button variant="ghost" href="#cursos">Ver programa →</Button>
-						</div>
-					</article>
+					{c.courses.cards.map((card, i) => {
+						const discipline = (['breathwork', 'meditacion', 'coaching'] as const)[i];
+						return (
+							<article class="yw-card">
+								<div class="yw-card-body">
+									<div style="display:flex;flex-wrap:wrap;gap:var(--space-2);">
+										<Badge tone={discipline}>{c.badges[discipline]}</Badge>
+										<Badge tone="neutral">{card.badgeSample}</Badge>
+									</div>
+									<h3 class="yw-card-title">{card.title}</h3>
+									<p class="yw-card-text">{card.text}</p>
+									<p class="yw-card-meta">{card.meta}</p>
+								</div>
+								<div class="yw-card-foot">
+									<span class="yw-small text-ink-muted">{card.price}</span>
+									<Button variant="ghost" href="#cursos">{card.cta}</Button>
+								</div>
+							</article>
+						);
+					})}
 				</div>
 			</div>
 		</section>
@@ -1101,72 +1777,50 @@ import Testimonial from '../components/Testimonial.astro';
 				class="mx-auto grid w-full max-w-[1200px] gap-8 px-4 py-12 md:grid-cols-2 md:items-center md:gap-12 md:px-6 md:py-24"
 			>
 				<div>
-					<p class="yw-eyebrow text-on-deep opacity-80">COMUNIDAD · LA TRIBU</p>
-					<h2 class="yw-heading-2 mt-4 text-on-deep">Tu camino también puede ser compartido.</h2>
-					<p class="yw-body mt-4 text-on-deep opacity-90">
-						Un espacio para la tribu Your Wave: seguir aprendiendo, compartir lo vivido y encontrar nuevas formas
-						de conectar.
-					</p>
+					<p class="yw-eyebrow text-on-deep opacity-80">{c.community.eyebrow}</p>
+					<h2 class="yw-heading-2 mt-4 text-on-deep">{c.community.title}</h2>
+					<p class="yw-body mt-4 text-on-deep opacity-90">{c.community.text}</p>
 					<ul class="mt-6 grid gap-4">
-						<li>
-							<p class="yw-heading-3 text-on-deep">Recursos</p>
-							<p class="yw-body text-on-deep opacity-90">Prácticas y audios para acompañar tu día.</p>
-						</li>
-						<li>
-							<p class="yw-heading-3 text-on-deep">Parte de olas</p>
-							<p class="yw-body text-on-deep opacity-90">Novedades y próximas sesiones, en tu correo.</p>
-						</li>
-						<li>
-							<p class="yw-heading-3 text-on-deep">Encuentros</p>
-							<p class="yw-body text-on-deep opacity-90">Quedadas en la playa para practicar juntos.</p>
-						</li>
+						{c.community.points.map((p) => (
+							<li>
+								<p class="yw-heading-3 text-on-deep">{p.title}</p>
+								<p class="yw-body text-on-deep opacity-90">{p.text}</p>
+							</li>
+						))}
 					</ul>
-					<p class="yw-small mt-4 text-on-deep opacity-80">Acceso y encuentros · por confirmar</p>
+					<p class="yw-small mt-4 text-on-deep opacity-80">{c.community.meta}</p>
 					<div class="mt-6 flex flex-wrap items-center gap-3">
 						<Button variant="secondary" class="border-on-deep text-on-deep" href="#comunidad">
-							Únete a la tribu
+							{c.community.cta}
 						</Button>
-						<span class="yw-small text-on-deep opacity-80">Enlace a la comunidad de WhatsApp · pendiente</span>
+						<span class="yw-small text-on-deep opacity-80">{c.community.pendingNote}</span>
 					</div>
 				</div>
 				<div
 					class="flex aspect-[4/3] items-center justify-center rounded-lg border border-dashed border-on-deep/40 bg-wave-ocean/40 p-6 text-center"
 					role="img"
-					aria-label="Imagen de referencia de la comunidad, no representa a miembros reales, pendiente de sustituir por fotografía real"
+					aria-label={c.community.imageCaption}
 				>
-					<p class="yw-small text-on-deep opacity-80">Imagen de referencia · no representa a miembros reales</p>
+					<p class="yw-small text-on-deep opacity-80">{c.community.imageCaption}</p>
 				</div>
 			</div>
 		</section>
 
 		<section class="bg-surface">
 			<div class="mx-auto w-full max-w-[1200px] px-4 py-12 md:px-6 md:py-24">
-				<p class="yw-eyebrow text-ink-muted">EXPERIENCIAS COMPARTIDAS</p>
-				<h2 class="yw-heading-2 mt-4 text-ink">Después de la ola.</h2>
+				<p class="yw-eyebrow text-ink-muted">{c.testimonials.eyebrow}</p>
+				<h2 class="yw-heading-2 mt-4 text-ink">{c.testimonials.title}</h2>
 				<div class="mt-10 grid gap-6 md:grid-cols-3">
-					<Testimonial
-						quote="Testimonio real de una participante sobre cómo se sintió después de la sesión."
-						name="Nombre real"
-						detail="Sesión 1 a 1 · pendiente"
-					/>
-					<Testimonial
-						quote="Testimonio real sobre una experiencia Cometa o Surf & Breath."
-						name="Nombre real"
-						detail="Cometa · pendiente"
-					/>
-					<Testimonial
-						quote="Testimonio real de alguien que ha hecho uno de los cursos."
-						name="Nombre real"
-						detail="Curso · pendiente"
-					/>
+					{c.testimonials.items.map((t) => (
+						<Testimonial quote={t.quote} name={t.name} detail={t.detail} />
+					))}
 				</div>
-				<p class="yw-small mt-6 text-ink-muted">Solo voces reales, con nombre, foto y consentimiento.</p>
+				<p class="yw-small mt-6 text-ink-muted">{c.testimonials.note}</p>
 			</div>
 		</section>
+	</main>
+</Layout>
 ```
-
-Insert immediately before `</main>` (after the "Fundadora" closing `</section>`
-from Task 7).
 
 - [ ] **Step 3: Verify the build succeeds**
 
@@ -1174,92 +1828,47 @@ from Task 7).
 npm run build
 ```
 
-Expected: completes with no errors. Visually confirm (via `npm run dev
---background` and a browser) that the "Únete a la tribu" secondary button on
-the indigo Comunidad section renders with a white border and white text —
-this is the cascade-layer fix from Task 2 actually taking effect.
+Expected: completes with no errors.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/pages/index.astro
-git commit -m "Add cursos, comunidad and testimonios sections"
+git add src/components/HomePage.astro
+git commit -m "Add surf & breath, misión, fundadora, cursos, comunidad and testimonios sections"
 ```
 
 ---
 
-## Task 9: FAQ, CTA final, Footer, and JSON-LD wiring
+## Task 9: HomePage.astro — FAQ, CTA final, Footer, and JSON-LD wiring
 
 **Files:**
-- Modify: `src/pages/index.astro`
+- Modify: `src/components/HomePage.astro`
 
 **Interfaces:**
-- Consumes: `FaqItem` (new import this task), plus everything from Tasks 5-8.
-- Produces: the page's `faqs` and `serviceJsonLd` frontmatter arrays, passed
-  to `Layout`'s `extraGraph` prop (consumed only by `Layout.astro` itself,
-  from Task 2).
+- Consumes: `FaqItem` (new import this task), plus everything from Tasks 7-8.
+- Produces: the page's `faqJsonLd`/`serviceJsonLd` values, passed to
+  `Layout`'s `extraGraph` prop (replacing the `[]` placeholder from Task 7).
 
-- [ ] **Step 1: Add the import and the `faqs`/`serviceJsonLd` frontmatter data**
+- [ ] **Step 1: Add the import and the JSON-LD frontmatter logic**
 
-Add the import:
+Add the import, alongside the others:
 
 ```astro
-import FaqItem from '../components/FaqItem.astro';
+import FaqItem from './FaqItem.astro';
 ```
 
-In the frontmatter, after the existing imports, add:
+In the frontmatter, after `const sessionHrefs = [...]`, add:
 
 ```astro
-const faqs = [
-	{
-		question: '¿Por dónde puedo empezar?',
-		answer:
-			'Con una sesión 1 a 1, una práctica en grupo o un curso. Si dudas, escríbenos y te ayudamos a elegir. Canal de contacto: WhatsApp.',
-	},
-	{
-		question: '¿Necesito experiencia previa o saber surfear?',
-		answer: 'Contenido pendiente de redacción.',
-	},
-	{
-		question: '¿Qué son las experiencias Cometas?',
-		answer: 'Contenido pendiente de redacción.',
-	},
-	{
-		question: '¿Cómo reservo y puedo cambiar la fecha?',
-		answer: 'Contenido pendiente de redacción.',
-	},
-	{
-		question: '¿Dónde se realizan y cuánto cuestan?',
-		answer: 'Contenido pendiente de redacción.',
-	},
-];
-
-const serviceJsonLd = [
-	{
-		'@type': 'Service',
-		name: 'Sesiones 1 a 1',
-		description: 'Acompañamiento personalizado y atención a lo que quieres explorar.',
-	},
-	{
-		'@type': 'Service',
-		name: 'Sesiones grupales',
-		description: 'Comparte la práctica. Una disciplina o una experiencia que lo combine todo.',
-	},
-	{
-		'@type': 'Service',
-		name: 'Cursos Your Wave',
-		description: 'Programas con objetivos claros para dar continuidad a tu práctica, paso a paso.',
-	},
-	{
-		'@type': 'Service',
-		name: 'Comunidad',
-		description: 'Un punto de encuentro para compartir recursos, novedades y experiencias con la tribu.',
-	},
-];
+const serviceJsonLd = c.sessions.cards.map((card) => ({
+	'@type': 'Service',
+	name: card.title,
+	description: card.description,
+}));
 
 const faqJsonLd = {
 	'@type': 'FAQPage',
-	mainEntity: faqs.map((faq) => ({
+	mainEntity: c.faq.items.map((faq) => ({
 		'@type': 'Question',
 		name: faq.question,
 		acceptedAnswer: { '@type': 'Answer', text: faq.answer },
@@ -1269,54 +1878,45 @@ const faqJsonLd = {
 
 - [ ] **Step 2: Pass `extraGraph` to `Layout`**
 
-Change the opening `<Layout ...>` tag from Task 5:
+Change the opening `<Layout ...>` tag from Task 7:
 
 ```astro
-<Layout
-	title="Your Wave — Breathwork, meditación y coaching junto al mar"
-	description="Sesiones de breathwork, meditación y coaching, individuales, grupales y en la playa, guiadas por una monitora de surf. Reserva por WhatsApp."
->
+<Layout title={c.meta.title} description={c.meta.description} lang={lang} extraGraph={[]}>
 ```
 
 to:
 
 ```astro
-<Layout
-	title="Your Wave — Breathwork, meditación y coaching junto al mar"
-	description="Sesiones de breathwork, meditación y coaching, individuales, grupales y en la playa, guiadas por una monitora de surf. Reserva por WhatsApp."
-	extraGraph={[faqJsonLd, ...serviceJsonLd]}
->
+<Layout title={c.meta.title} description={c.meta.description} lang={lang} extraGraph={[faqJsonLd, ...serviceJsonLd]}>
 ```
 
-- [ ] **Step 3: Insert the FAQ, CTA final and footer, right before `</main>`, with the footer after `</main>`**
+- [ ] **Step 3: Insert the FAQ and CTA-final sections, then the footer**
+
+Remove the `</main>\n</Layout>` lines left by Task 8, insert this block
+(FAQ and CTA final go inside `<main>`, the footer goes after `</main>`):
 
 ```astro
 		<section id="faq" class="bg-surface">
 			<div class="mx-auto w-full max-w-[1200px] px-4 py-12 md:px-6 md:py-24">
-				<p class="yw-eyebrow text-ink-muted">ANTES DE EMPEZAR</p>
-				<h2 class="yw-heading-2 mt-4 text-ink">Un poco más de claridad.</h2>
-				<p class="yw-body mt-2 max-w-[60ch] text-ink-muted">Las preguntas que suelen surgir antes de reservar.</p>
+				<p class="yw-eyebrow text-ink-muted">{c.faq.eyebrow}</p>
+				<h2 class="yw-heading-2 mt-4 text-ink">{c.faq.title}</h2>
+				<p class="yw-body mt-2 max-w-[60ch] text-ink-muted">{c.faq.intro}</p>
 				<div class="mt-8 max-w-[640px]">
-					{
-						faqs.map((faq, i) => (
-							<FaqItem question={faq.question} defaultOpen={i === 0}>
-								{i === 0 ? (
-									<>
-										Con una sesión 1 a 1, una práctica en grupo o un curso. Si dudas,{' '}
-										<a
-											class="text-link underline"
-											href={whatsappLink('Hola, tengo dudas sobre cómo empezar en Your Wave.')}
-										>
-											escríbenos
-										</a>{' '}
-										y te ayudamos a elegir. Canal de contacto: WhatsApp.
-									</>
-								) : (
-									faq.answer
-								)}
-							</FaqItem>
-						))
-					}
+					{c.faq.items.map((faq, i) => (
+						<FaqItem question={faq.question} defaultOpen={i === 0}>
+							{i === 0 ? (
+								<>
+									{c.faq.firstAnswerPrefix}
+									<a class="text-link underline" href={whatsappLink(c.whatsapp.faqHelp)}>
+										{c.faq.firstAnswerLink}
+									</a>
+									{c.faq.firstAnswerSuffix}
+								</>
+							) : (
+								faq.answer
+							)}
+						</FaqItem>
+					))}
 				</div>
 			</div>
 		</section>
@@ -1325,20 +1925,16 @@ to:
 
 		<section class="bg-wave-indigo text-on-deep">
 			<div class="mx-auto w-full max-w-[1200px] px-4 py-12 text-center md:px-6 md:py-24">
-				<p class="yw-eyebrow text-on-deep opacity-80">TU SIGUIENTE PASO</p>
-				<h2 class="yw-heading-2 mt-4 text-on-deep">Tu próxima ola empieza con una respiración.</h2>
-				<p class="yw-body-lg mt-4 text-on-deep opacity-90">
-					Elige tu sesión. Consulta disponibilidad. Confirma tu plaza.
-				</p>
+				<p class="yw-eyebrow text-on-deep opacity-80">{c.finalCta.eyebrow}</p>
+				<h2 class="yw-heading-2 mt-4 text-on-deep">{c.finalCta.title}</h2>
+				<p class="yw-body-lg mt-4 text-on-deep opacity-90">{c.finalCta.text}</p>
 				<div class="mt-8 flex flex-wrap justify-center gap-4">
-					<Button size="lg" href={whatsappLink('Hola, quiero reservar una sesión en Your Wave.')}>
-						Reserva tu sesión
-					</Button>
+					<Button size="lg" href={whatsappLink(c.whatsapp.reserve)}>{c.finalCta.ctaPrimary}</Button>
 					<Button variant="secondary" size="lg" class="border-on-deep text-on-deep" href="#cursos">
-						Ver cursos
+						{c.finalCta.ctaSecondary}
 					</Button>
 				</div>
-				<p class="yw-small mt-4 text-on-deep opacity-80">Agenda y condiciones de reserva · por confirmar</p>
+				<p class="yw-small mt-4 text-on-deep opacity-80">{c.finalCta.note}</p>
 			</div>
 		</section>
 	</main>
@@ -1346,62 +1942,54 @@ to:
 	<footer class="bg-wave-indigo text-on-deep">
 		<div class="mx-auto grid w-full max-w-[1200px] gap-10 px-4 py-12 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:px-6 md:py-16">
 			<div>
-				<p class="yw-heading-3 text-on-deep">Your Wave</p>
+				<p class="yw-heading-3 text-on-deep">{c.footer.brandLabel}</p>
 				<p class="yw-body mt-2 text-on-deep opacity-90">
-					Encuentra <span class="yw-script">tu ola</span>
+					{c.footer.taglinePre}<span class="yw-script">{c.footer.scriptWord}</span>
 				</p>
-				<p class="yw-small mt-2 text-on-deep opacity-80">Breathwork, meditación y coaching junto al mar.</p>
+				<p class="yw-small mt-2 text-on-deep opacity-80">{c.footer.small}</p>
 			</div>
-			<nav aria-label="Explorar">
-				<p class="yw-eyebrow text-on-deep opacity-80">Explorar</p>
+			<nav aria-label={c.footer.exploreLabel}>
+				<p class="yw-eyebrow text-on-deep opacity-80">{c.footer.exploreLabel}</p>
 				<ul class="mt-4 grid gap-2">
-					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#sesiones">Sesiones 1 a 1</a></li>
-					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#sesiones">Sesiones grupales</a></li>
-					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#cometas">Cometas</a></li>
-					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#surf-breath">Surf &amp; Breath</a></li>
-					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#cursos">Cursos Your Wave</a></li>
+					{c.footer.explore.map((item) => (
+						<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href={item.href}>{item.label}</a></li>
+					))}
 				</ul>
 			</nav>
-			<nav aria-label="Your Wave">
-				<p class="yw-eyebrow text-on-deep opacity-80">Your Wave</p>
+			<nav aria-label={c.footer.brandLabel}>
+				<p class="yw-eyebrow text-on-deep opacity-80">{c.footer.brandLabel}</p>
 				<ul class="mt-4 grid gap-2">
-					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#sobre-mi">Sobre mí</a></li>
-					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#comunidad">Comunidad</a></li>
-					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#faq">Preguntas frecuentes</a></li>
+					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#sobre-mi">{c.footer.sobreMi}</a></li>
+					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#comunidad">{c.footer.comunidad}</a></li>
+					<li><a class="yw-body text-on-deep opacity-90 hover:opacity-100" href="#faq">{c.footer.faqLabel}</a></li>
 					<li>
-						<a
-							class="yw-body text-on-deep opacity-90 hover:opacity-100"
-							href={whatsappLink('Hola, quiero contactar con Your Wave.')}
-						>
-							Contacto
+						<a class="yw-body text-on-deep opacity-90 hover:opacity-100" href={whatsappLink(c.whatsapp.footerContact)}>
+							{c.footer.contacto}
 						</a>
 					</li>
 				</ul>
 			</nav>
 			<div>
-				<p class="yw-eyebrow text-on-deep opacity-80">Hablemos</p>
+				<p class="yw-eyebrow text-on-deep opacity-80">{c.footer.talkLabel}</p>
 				<ul class="mt-4 grid gap-2">
-					<li class="yw-body text-on-deep opacity-90">Correo · por confirmar</li>
+					<li class="yw-body text-on-deep opacity-90">{c.footer.emailPending}</li>
 					<li>
-						<a
-							class="yw-body text-on-deep opacity-90 hover:opacity-100"
-							href={whatsappLink('Hola, quiero más información sobre Your Wave.')}
-						>
-							WhatsApp
+						<a class="yw-body text-on-deep opacity-90 hover:opacity-100" href={whatsappLink(c.whatsapp.footerInfo)}>
+							{c.footer.whatsappLabel}
 						</a>
 					</li>
-					<li class="yw-body text-on-deep opacity-90">Instagram · por confirmar</li>
+					<li class="yw-body text-on-deep opacity-90">{c.footer.instagramPending}</li>
 				</ul>
 			</div>
 		</div>
 		<div class="border-t border-on-deep/20">
 			<div class="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-4 px-4 py-6 md:px-6">
-				<p class="yw-small text-on-deep opacity-80">© 2026 Your Wave</p>
+				<p class="yw-small text-on-deep opacity-80">{c.footer.copyright}</p>
 				<ul class="flex flex-wrap gap-4">
-					<li><a class="yw-small text-on-deep opacity-80 hover:opacity-100" href="#">Privacidad</a></li>
-					<li><a class="yw-small text-on-deep opacity-80 hover:opacity-100" href="#">Términos</a></li>
-					<li><a class="yw-small text-on-deep opacity-80 hover:opacity-100" href="#">Aviso legal</a></li>
-					<li><a class="yw-small text-on-deep opacity-80 hover:opacity-100" href="#">Cookies</a></li>
+					<li><a class="yw-small text-on-deep opacity-80 hover:opacity-100" href="#">{c.footer.privacy}</a></li>
+					<li><a class="yw-small text-on-deep opacity-80 hover:opacity-100" href="#">{c.footer.terms}</a></li>
+					<li><a class="yw-small text-on-deep opacity-80 hover:opacity-100" href="#">{c.footer.notice}</a></li>
+					<li><a class="yw-small text-on-deep opacity-80 hover:opacity-100" href="#">{c.footer.cookies}</a></li>
 				</ul>
 			</div>
 		</div>
@@ -1409,129 +1997,186 @@ to:
 </Layout>
 ```
 
-This replaces the previous closing `	</main>\n</Layout>` lines: the FAQ and
-CTA-final sections go inside `<main>` (right after Testimonios from Task 8),
-then `</main>`, then the new `<footer>`, then `</Layout>`.
-
-- [ ] **Step 4: Verify the build and check the JSON-LD**
+- [ ] **Step 4: Verify the build succeeds**
 
 ```bash
 npm run build
-grep -o '"@type":"FAQPage".*}]}' dist/index.html | head -c 600
 ```
 
-Expected: `npm run build` completes with no errors, and the `grep` output
-shows a `FAQPage` object whose five `"name"` values match the five FAQ
-questions above word-for-word, and whose `"text"` values match the `answer`
-fields above (the first one without the `escríbenos` link markup, matching
-the spec's "mismo texto visible" rule in substance).
+Expected: completes with no errors. `HomePage.astro` is now complete; it
+still isn't imported by any page (that's Task 10).
 
-- [ ] **Step 5: Verify a WhatsApp link encodes Spanish text correctly**
+- [ ] **Step 5: Commit**
 
 ```bash
-node -e "console.log(decodeURIComponent('Hola%2C%20quiero%20reservar%20una%20sesi%C3%B3n%20en%20Your%20Wave.'))"
-```
-
-Then open `dist/index.html` and confirm the actual `href` generated for the
-hero's primary button starts with `https://wa.me/34628757954?text=` and that
-URL-decoding it (e.g. pasting into a browser address bar) reproduces
-"Hola, quiero reservar una sesión en Your Wave." exactly, accented
-characters included.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add src/pages/index.astro
-git commit -m "Add FAQ, final CTA and footer; wire FAQPage/Service JSON-LD"
+git add src/components/HomePage.astro
+git commit -m "Add FAQ, final CTA and footer to HomePage; wire FAQPage/Service JSON-LD"
 ```
 
 ---
 
-## Task 10: llms.txt and final verification
+## Task 10: Page entry files (ES/EN) and llms.txt
 
 **Files:**
+- Modify: `src/pages/index.astro` (replace placeholder content)
+- Create: `src/pages/en/index.astro`
 - Create: `public/llms.txt`
 
-- [ ] **Step 1: Write `public/llms.txt`**
+**Interfaces:**
+- Consumes: `HomePage` (Task 9), `es`/`en` content dictionaries (Tasks 5-6).
+
+- [ ] **Step 1: Replace `src/pages/index.astro`**
+
+```astro
+---
+import HomePage from '../components/HomePage.astro';
+import { es } from '../content/home/es';
+---
+
+<HomePage lang="es" content={es} />
+```
+
+- [ ] **Step 2: Create `src/pages/en/index.astro`**
+
+```astro
+---
+import HomePage from '../../components/HomePage.astro';
+import { en } from '../../content/home/en';
+---
+
+<HomePage lang="en" content={en} />
+```
+
+- [ ] **Step 3: Write `public/llms.txt`**
 
 ```
 # Your Wave
 
-Your Wave (World Awaken Vision Experience) ofrece sesiones de breathwork,
-meditación y coaching/hipnoterapia guiadas por una monitora de surf, en
-individual, en grupo y en la playa (Surf & Breath). La marca se mueve como
-el mar: serena en la orilla, con fuerza en la ola.
+Your Wave (World Awaken Vision Experience) offers breathwork, meditation
+and coaching/hypnotherapy sessions guided by a surf instructor — one to
+one, in groups, and on the beach (Surf & Breath). The brand moves like the
+sea: calm on the shore, powerful in the wave. Available in Spanish
+(https://yourwave.es/) and English (https://yourwave.es/en/).
 
-## Qué ofrece
+## What it offers
 
-- Sesiones 1 a 1: acompañamiento individual personalizado.
-- Sesiones grupales: por disciplina (breathwork, meditación, coaching) o
-  combinadas en "Cometas".
-- Surf & Breath: breathwork en la arena + iniciación al surf o baño de olas
-  guiado + meditación.
-- Cursos Your Wave: programas con temario y objetivos claros.
-- Comunidad: una tribu que se organiza a través de una comunidad de
-  WhatsApp.
+- 1-to-1 sessions: personalised individual support.
+- Group sessions: by discipline (breathwork, meditation, coaching) or
+  combined in "Cometas".
+- Surf & Breath: breathwork on the sand + guided surf/wave bathing +
+  meditation.
+- Your Wave Courses: programmes with clear syllabuses and goals.
+- Community: a tribe that organises through a WhatsApp community.
 
-## Contacto
+## Contact
 
-Reservas y contacto por WhatsApp: https://wa.me/34628757954
+Booking and contact via WhatsApp: https://wa.me/34628757954
 
-## Páginas
+## Pages
 
-- Home: https://yourwave.es/
+- Home (Spanish): https://yourwave.es/
+- Home (English): https://yourwave.es/en/
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 4: Verify the build succeeds and both locales render**
 
 ```bash
-git add public/llms.txt
-git commit -m "Add llms.txt for GEO"
+npm run build
+test -f dist/index.html && echo "ES ok"
+test -f dist/en/index.html && echo "EN ok"
+grep -c '<h1' dist/index.html
+grep -c '<h1' dist/en/index.html
 ```
 
-- [ ] **Step 3: Full production build**
+Expected: both `ES ok` and `EN ok` print, and each `grep -c` prints `1`
+(exactly one `<h1>` per page).
+
+- [ ] **Step 5: Verify locale-correct WhatsApp links**
+
+```bash
+grep -o 'wa%2Eme[^"]*\|wa\.me[^"]*' dist/index.html | head -1
+grep -o 'wa%2Eme[^"]*\|wa\.me[^"]*' dist/en/index.html | head -1
+```
+
+Expected: the Spanish page's link decodes (percent-decode the `text=`
+value) to a Spanish sentence ("Hola, quiero..."); the English page's link
+decodes to an English sentence ("Hi, I'd like..."). This is the Review
+Focus check for cross-language WhatsApp message leakage.
+
+- [ ] **Step 6: Verify the FAQPage JSON-LD matches each locale's visible text**
+
+```bash
+grep -o '"@type":"FAQPage".*}]}' dist/index.html | head -c 400
+grep -o '"@type":"FAQPage".*}]}' dist/en/index.html | head -c 400
+```
+
+Expected: the Spanish build's JSON-LD contains Spanish question/answer
+text matching the five FAQ questions in `es.ts`; the English build's
+contains the English text from `en.ts`.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/pages/index.astro src/pages/en/index.astro public/llms.txt
+git commit -m "Wire ES/EN home pages to HomePage component; add llms.txt"
+```
+
+---
+
+## Task 11: Final verification
+
+**Files:** none (verification only).
+
+- [ ] **Step 1: Full production build**
 
 ```bash
 npm run build
 ```
 
-Expected: completes with no errors. Open `dist/index.html` and spot-check:
-one `<h1>` on the page, `<link rel="canonical" href="https://yourwave.es/">`
-present, `<link rel="sitemap" ...>` present, exactly one `application/ld+json`
-script tag containing `Organization`, `WebSite`, `WebPage`, `FAQPage`, and
-four `Service` entries in its `@graph`.
+Expected: completes with no errors. Open `dist/index.html` and
+`dist/en/index.html` and spot-check each: one `<h1>`, `<link
+rel="canonical">` pointing to the right locale URL, three `<link
+rel="alternate" hreflang="...">` tags (`es`, `en`, `x-default`), and one
+`application/ld+json` script containing `Organization`, `WebSite`,
+`WebPage`, `FAQPage`, and four `Service` entries in its `@graph`, all in
+that page's own language.
 
-- [ ] **Step 4: Manual browser verification**
+- [ ] **Step 2: Manual browser verification — both locales**
 
 ```bash
 astro dev --background
 ```
 
-Using Claude in Chrome (or any browser), open the dev server URL and check:
+Using Claude in Chrome (or any browser), open the dev server and check,
+**for both `/` and `/en/`**:
 
-- Desktop width (~1440px) and mobile width (~390px, matching the two
-  mockup breakpoints in `doc/propuesta-v2/`): no horizontal overflow, no
-  overlapping text.
+- Desktop width (~1440px) and mobile width (~390px, matching the mockup
+  breakpoints): no horizontal overflow, no overlapping text.
 - An extra-narrow width (~360px): header, hero, and the 4-card and 3-card
-  grids still fit without horizontal scroll.
+  grids still fit without horizontal scroll — check this especially on the
+  English page, since its labels run longer in places (e.g. "Your Wave
+  Courses" vs "Cursos Your Wave").
 - Click every header nav link and confirm it scrolls to the matching
-  section (`#sesiones`, `#cometas`, `#cursos`, `#comunidad`, `#sobre-mi`).
+  section.
+- Click the `ES`/`EN` language switcher in the header and confirm it lands
+  on the other locale's home page (not a 404).
 - Click the first FAQ item closed, then open it again — `<details>` toggles
   with no JavaScript errors in the console.
-- Hover/inspect the "Únete a la tribu" button in the Comunidad section:
-  confirm its text and border render white (`on-deep`), not the default
-  near-black `ink` — this confirms the Task 2 layer fix is working.
+- Inspect the "Únete a la tribu" / "Join the tribe" button in the Comunidad
+  section: confirm its text and border render white (`on-deep`), not the
+  default near-black `ink` — this confirms the Task 2 cascade-layer fix is
+  working.
 - Read the Comunidad, CTA final and footer sections against their
   `wave-indigo` background and confirm the `opacity-80`/`opacity-90` text is
   comfortably readable, not washed out.
-- Check the browser console for any 404s (there should be none — the two
-  logo SVGs and the favicon are the only static assets referenced).
+- Check the browser console for 404s on both pages (there should be none —
+  the two logo SVGs and the favicon are the only static assets referenced).
 
 ```bash
 astro dev stop
 ```
 
-- [ ] **Step 5: Report completion**
+- [ ] **Step 3: Report completion**
 
-Once every check in Steps 3-4 passes, the home page is complete per the
-spec. No commit needed for this step (verification only).
+Once every check in Steps 1-2 passes for both locales, the home page is
+complete per the spec. No commit needed for this step (verification only).
