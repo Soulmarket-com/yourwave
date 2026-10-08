@@ -4,11 +4,47 @@ Fecha: 2026-10-08
 
 ## Objetivo
 
-Construir la home de Your Wave (`src/pages/index.astro`) usando el sistema de
-diseño ya definido en `design-system/`, con el contenido real del mockup
-`doc/propuesta-v2/` (no contenido inventado), y dejar la base técnica de
+Construir la home de Your Wave usando el sistema de diseño ya definido en
+`design-system/`, con el contenido real del mockup `doc/propuesta-v2/` (no
+contenido inventado), en **español e inglés**, y dejar la base técnica de
 SEO, GEO (Generative Engine Optimization) y rendimiento correcta desde el
 primer despliegue.
+
+## Internacionalización (ES/EN)
+
+- **Rutas**: enrutado i18n nativo de Astro (`astro:i18n`, sin dependencias
+  nuevas). `defaultLocale: 'es'`, `locales: ['es', 'en']`,
+  `routing: { prefixDefaultLocale: false }` en `astro.config.mjs`. Español
+  en la raíz (`https://yourwave.es/`), inglés en `https://yourwave.es/en/`.
+- **Contenido**: el copy en inglés es una traducción directa del mockup
+  (mismo tono, mismos marcadores de contenido pendiente), no un texto
+  nuevo. Vive en diccionarios tipados por idioma
+  (`src/content/home/es.ts`, `src/content/home/en.ts`), no repartido suelto
+  por el marcado.
+- **Plantilla compartida**: `src/components/HomePage.astro` contiene todo el
+  marcado de la home (las 15 secciones) una sola vez, parametrizado por
+  `lang: 'es' | 'en'` y `content: HomeContent`. `src/pages/index.astro` y
+  `src/pages/en/index.astro` son wrappers finos que solo importan el
+  diccionario de su idioma y renderizan `<HomePage lang="es" content={es} />`
+  / `<HomePage lang="en" content={en} />`. Evita mantener el mismo layout
+  duplicado en dos archivos.
+- **`Layout.astro`**: gana un prop `lang` (por defecto `'es'`) para
+  `<html lang={lang}>`, y genera `<link rel="alternate" hreflang="es">`,
+  `hreflang="en"` y `hreflang="x-default"` usando `getRelativeLocaleUrl` de
+  `astro:i18n` (de nuevo, nativo, sin construir URLs a mano).
+- **Selector de idioma**: un enlace `ES`/`EN` en la cabecera (y en el
+  footer) que apunta a la versión del otro idioma de la misma página,
+  calculado también con `getRelativeLocaleUrl`.
+- **WhatsApp**: el mensaje precargado de cada CTA también está en el
+  diccionario de contenido (`content.whatsapp.*`), traducido — un visitante
+  inglés no debe recibir un mensaje precargado en español.
+- **JSON-LD** (`FAQPage`, `Service`): se genera a partir de
+  `content.faq`/`content.sessions` de cada idioma, así que ya sale
+  traducido sin lógica extra.
+- **Sitemap**: `@astrojs/sitemap` detecta las dos rutas (`/` y `/en/`) solas,
+  al ser páginas de build reales; no hace falta configuración adicional.
+- Los textos de marca que no se traducen porque son nombres propios: "Your
+  Wave", "World Awaken Vision Experience", "Cometas", "Surf & Breath".
 
 ## Fuera de alcance
 
@@ -303,8 +339,9 @@ se decide el punto exacto al maquetar, siguiendo el mockup visual.
   monitora de surf. Sesiones individuales, grupales y en la playa para
   volver a tu centro.'` (tono y vocabulario de `design-system/README.md`).
 - `Layout.astro` ya genera `@graph` con `Organization`, `WebSite`,
-  `WebPage`. Se añade a ese mismo `@graph`, solo en `index.astro` (vía prop
-  o slot, sin tocar el contrato genérico del Layout):
+  `WebPage`. `HomePage.astro` añade a ese mismo `@graph` (vía el prop
+  `extraGraph`, sin tocar el contrato genérico del Layout), generado a
+  partir del diccionario de contenido del idioma que corresponda:
   - `FAQPage` con las 5 preguntas/respuestas de la sección FAQ (mismo texto
     visible, nunca oculto ni distinto — evita penalización por contenido
     engañoso).
